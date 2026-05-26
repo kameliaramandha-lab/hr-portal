@@ -2263,7 +2263,7 @@ let TF={
   hiringType:'', tl:'', hcType:'', rcm:'', status:'', priority:'', hub:''
 };
 function tfSet(k,v){TF[k]=v;render();}
-function tfClear(){TF={search:'',region:'',role:'',dateFrom:'',dateTo:'',hiringType:'',tl:'',hcType:'',rcm:'',status:'',priority:'',hub:''};render();}
+function tfClear(){Object.keys(TF).forEach(k=>TF[k]='');render();}
 
 function applyFilters(list){
   return list.filter(t=>{
@@ -2291,71 +2291,101 @@ function filterPanel(showTL=true){
   const provinces=[...new Set(TICKETS.map(t=>t.locProv).filter(Boolean))].sort();
   const tls=[...new Set(TICKETS.map(t=>t.tl).filter(Boolean))].sort();
   const hubs=[...new Set(TICKETS.map(t=>t.stationId).filter(Boolean))].sort();
+  const rcms=[...new Set(TICKETS.map(t=>t.rcm).filter(Boolean))].sort();
   const active=Object.values(TF).some(v=>v!=='');
+  const activeCount=Object.values(TF).filter(v=>v!=='').length;
   return`<div class="card" style="margin-bottom:11px;padding:14px 16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div style="font-size:11px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:6px">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Filters
-        ${active?`<span style="background:var(--spx);color:#fff;border-radius:10px;padding:0 6px;font-size:9px">${Object.values(TF).filter(v=>v!=='').length} active</span>`:''}
+        ${active?`<span style="background:var(--spx);color:#fff;border-radius:10px;padding:0 6px;font-size:9px">${activeCount} active</span>`:''}
       </div>
-      ${active?`<button class="btn sm" onclick="tfClear()" style="color:var(--red);border-color:var(--red)">Clear all</button>`:''}
+      ${active?`<button class="btn sm danger" onclick="tfClear()">Clear all</button>`:''}
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
-      <div><label>Search (ID / role / city)</label>
-        <input placeholder="CTO-2025, SOC Lead..." value="${TF.search}" oninput="TF.search=this.value;render()" style="font-size:11px"/></div>
-      <div><label>Region / Province</label>
-        <select onchange="tfSet('region',this.value)" style="font-size:11px">
-          <option value="">All provinces</option>
-          ${provinces.map(p=>`<option ${TF.region===p?'selected':''}>${p}</option>`).join('')}
-        </select></div>
-      <div><label>Role name</label>
-        <input placeholder="e.g. SOC Lead" value="${TF.role}" oninput="TF.role=this.value;render()" style="font-size:11px"/></div>
-      <div><label>Open date — from</label>
-        <input type="date" value="${TF.dateFrom}" onchange="tfSet('dateFrom',this.value)" style="font-size:11px"/></div>
-      <div><label>Open date — to</label>
-        <input type="date" value="${TF.dateTo}" onchange="tfSet('dateTo',this.value)" style="font-size:11px"/></div>
-      <div><label>Category hiring</label>
-        <select onchange="tfSet('hiringType',this.value)" style="font-size:11px">
-          <option value="">All</option>
-          <option ${TF.hiringType==='External'?'selected':''}>External</option>
-          <option ${TF.hiringType==='Internal'?'selected':''}>Internal</option>
-          <option ${TF.hiringType==='Hybrid'?'selected':''}>Hybrid</option>
-        </select></div>
-      ${showTL?`<div><label>Team lead</label>
-        <select onchange="tfSet('tl',this.value)" style="font-size:11px">
-          <option value="">All TLs</option>
-          ${tls.map(t=>`<option ${TF.tl===t?'selected':''}>${t}</option>`).join('')}
-        </select></div>`:''}
-      <div><label>HC assignment</label>
-        <select onchange="tfSet('hcType',this.value)" style="font-size:11px">
-          <option value="">All</option>
-          <option value="assigned" ${TF.hcType==='assigned'?'selected':''}>Assigned HC</option>
-          <option value="unassigned" ${TF.hcType==='unassigned'?'selected':''}>Unassigned HC</option>
-        </select></div>
-      <div><label>Hiring ID (CTO)</label>
-        <input placeholder="CTO-2025-00..." value="${TF.search}" oninput="TF.search=this.value;render()" style="font-size:11px"/></div>
-      <div><label>RCM PIC</label>
-        <input placeholder="Recruiter name..." value="${TF.rcm}" oninput="TF.rcm=this.value;render()" style="font-size:11px"/></div>
-      <div><label>Ticket status</label>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px">
+
+      <!-- Search — always shown -->
+      <div><label>Search</label>
+        <input placeholder="ID / role / city / RCM..." value="${TF.search}"
+          oninput="TF.search=this.value;render()" style="font-size:11px"/></div>
+
+      <!-- Status -->
+      <div><label>Status</label>
         <select onchange="tfSet('status',this.value)" style="font-size:11px">
           <option value="">All statuses</option>
           ${['Open','In Recruitment','Done','On Hold','Cancelled'].map(s=>`<option ${TF.status===s?'selected':''}>${s}</option>`).join('')}
         </select></div>
-      <div><label>Priority</label>
+
+      <!-- Province -->
+      <div><label>Province</label>
+        <select onchange="tfSet('region',this.value)" style="font-size:11px">
+          <option value="">All provinces</option>
+          ${provinces.map(pv=>`<option ${TF.region===pv?'selected':''}>${pv}</option>`).join('')}
+        </select></div>
+
+      <!-- Role name -->
+      <div><label>Role name</label>
+        <input placeholder="e.g. SOC Lead" value="${TF.role}"
+          oninput="TF.role=this.value;render()" style="font-size:11px"/></div>
+
+      <!-- Hub -->
+      <div><label>Hub</label>
+        <select onchange="tfSet('hub',this.value)" style="font-size:11px">
+          <option value="">All hubs</option>
+          ${hubs.map(h=>`<option ${TF.hub===h?'selected':''}>${h}</option>`).join('')}
+        </select></div>
+
+      <!-- Priority — only shown to TL/admin since it's TL-set -->
+      ${showTL?`<div><label>Priority</label>
         <select onchange="tfSet('priority',this.value)" style="font-size:11px">
           <option value="">All priorities</option>
           <option value="P0" ${TF.priority==='P0'?'selected':''}>P0 — Critical</option>
           <option value="P1" ${TF.priority==='P1'?'selected':''}>P1 — High</option>
           <option value="P2" ${TF.priority==='P2'?'selected':''}>P2 — Medium</option>
           <option value="P3" ${TF.priority==='P3'?'selected':''}>P3 — Low</option>
-        </select></div>
-      <div><label>Hub name</label>
-        <select onchange="tfSet('hub',this.value)" style="font-size:11px">
-          <option value="">All hubs</option>
-          ${hubs.map(h=>`<option ${TF.hub===h?'selected':''}>${h}</option>`).join('')}
-        </select></div>
+        </select></div>`:''}
+
+      <!-- TL filter — shown to TL/admin, hidden from RCM -->
+      ${showTL?`<div><label>Team Lead</label>
+        <select onchange="tfSet('tl',this.value)" style="font-size:11px">
+          <option value="">All TLs</option>
+          ${tls.map(tl=>`<option ${TF.tl===tl?'selected':''}>${tl}</option>`).join('')}
+        </select></div>`:''}
+
+      <!-- RCM filter — shown to TL/admin -->
+      ${showTL?`<div><label>Recruiter (RCM)</label>
+        <select onchange="tfSet('rcm',this.value)" style="font-size:11px">
+          <option value="">All recruiters</option>
+          ${rcms.map(r=>`<option ${TF.rcm===r?'selected':''}>${r}</option>`).join('')}
+        </select></div>`:''}
+
+      <!-- Source of hiring — for TL/admin -->
+      ${showTL?`<div><label>Source of hiring</label>
+        <select onchange="tfSet('hiringType',this.value)" style="font-size:11px">
+          <option value="">All sources</option>
+          <option ${TF.hiringType==='External'?'selected':''} value="External">External</option>
+          <option ${TF.hiringType==='Internal'?'selected':''} value="Internal">Internal</option>
+          <option ${TF.hiringType==='Hybrid'?'selected':''} value="Hybrid">Hybrid</option>
+        </select></div>`:''}
+
+      <!-- Date range -->
+      <div><label>Date from</label>
+        <input type="date" value="${TF.dateFrom}"
+          onchange="tfSet('dateFrom',this.value)" style="font-size:11px"/></div>
+      <div><label>Date to</label>
+        <input type="date" value="${TF.dateTo}"
+          onchange="tfSet('dateTo',this.value)" style="font-size:11px"/></div>
+
     </div>
+    <!-- Active filter chips -->
+    ${active?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;padding-top:9px;border-top:1px solid var(--border-l)">
+      ${Object.entries(TF).filter(([,v])=>v!=='').map(([k,v])=>`
+        <div style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;background:var(--navy-l);border-radius:4px;font-size:10.5px;color:var(--navy);border:1px solid var(--border)">
+          <span style="color:var(--ink3);font-size:9.5px;text-transform:uppercase">${k}:</span> ${v}
+          <span onclick="TF['${k}']='';render()" style="cursor:pointer;color:var(--ink3);font-size:12px;line-height:1;margin-left:2px">×</span>
+        </div>`).join('')}
+    </div>`:''}
   </div>`;
 }
 
@@ -2512,7 +2542,7 @@ function pgTickets(){
 
   <!-- All tickets tab -->
   ${currentRole!=='rcm'||activeTab==='all'?`
-  ${currentRole!=='rcm'?filterPanel(currentRole!=='rm'&&currentRole!=='rcm'):''}
+  ${filterPanel(currentRole==='tl'||currentRole==='admin'||currentRole==='hrbp')}
   <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto">
   <table style="min-width:${currentRole==='rcm'?'1260':'1240'}px">
     <tr><th>CTO ID</th><th>Role name</th><th>City</th><th>Province</th><th>Hub</th><th>Type</th><th>Status</th><th>Approval</th><th>Priority</th><th>TL</th><th>RCM</th><th>Webform</th>${currentRole==='rcm'?'<th>Receipt</th>':''}<th>HC</th><th>Aging</th><th>Actions</th></tr>

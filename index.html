@@ -212,6 +212,13 @@ input:checked+.jp-slider:before{transform:translateX(18px)}
       <option value="hrbp">HRBP</option>
       <option value="hm">Hiring Manager</option>
       <option value="admin">Super Admin</option>
+      <optgroup label="── Employee (Internal Movement) ──">
+        <option value="emp_EMP-001">Employee — Budi Hartono (SOC Lead)</option>
+        <option value="emp_EMP-002">Employee — Sari Dewi (MM Supervisor)</option>
+        <option value="emp_EMP-003">Employee — Rizky Pratama (Hub Lead, ineligible)</option>
+        <option value="emp_EMP-004">Employee — Mega Puspita (grade C, ineligible)</option>
+        <option value="emp_EMP-005">Employee — Andi Kurniawan (SOC Team Lead)</option>
+      </optgroup>
     </select>
   </div>
   <div class="sb-sec">Main menu</div>
@@ -235,7 +242,7 @@ input:checked+.jp-slider:before{transform:translateX(18px)}
     </div>
     <div class="sni" id="sni-assign" data-p="assignments" onclick="nav('assignments')">
       <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 13c0-2.761 2.686-5 6-5" stroke="currentColor" stroke-width="1.3"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.3"/><line x1="10" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="1.3"/></svg>
-      Unassigned Tickets <span id="unassign-cnt" style="margin-left:auto;background:var(--spx);color:#fff;font-size:9px;padding:0 5px;border-radius:10px;display:none">0</span>
+      Assign Recruiter <span id="unassign-cnt" style="margin-left:auto;background:var(--spx);color:#fff;font-size:9px;padding:0 5px;border-radius:10px;display:none">0</span>
     </div>
 
   </div>
@@ -245,6 +252,24 @@ input:checked+.jp-slider:before{transform:translateX(18px)}
   <div class="ni" data-p="blacklist" onclick="nav('blacklist')">
     <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/><line x1="4.2" y1="4.2" x2="11.8" y2="11.8" stroke="currentColor" stroke-width="1.4"/></svg>Blacklist
   </div>
+  <div class="sb-sec">Internal Movement</div>
+  <div class="ni" data-p="im-home" onclick="nav('im-home')">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M1 8h14M9 4l4 4-4 4M7 4L3 8l4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Internal Movement
+    <span class="ni-arr" id="im-arr"></span>
+  </div>
+  <div class="subnav" id="im-sub">
+    <div class="sni" data-p="im-new" onclick="nav('im-new')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><line x1="8" y1="5" x2="8" y2="11" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.3"/></svg>
+      New Relocation Request</div>
+    <div class="sni" data-p="im-cases" onclick="nav('im-cases')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1 7h14" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="3" x2="5" y2="1" stroke="currentColor" stroke-width="1.3"/><line x1="11" y1="3" x2="11" y2="1" stroke="currentColor" stroke-width="1.3"/></svg>
+      All Cases</div>
+    <div class="sni" data-p="im-jobs" onclick="nav('im-jobs')">
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5V4a3 3 0 016 0v1" stroke="currentColor" stroke-width="1.3"/><line x1="8" y1="9" x2="8" y2="11" stroke="currentColor" stroke-width="1.2"/></svg>
+      Internal Job Openings</div>
+  </div>
+
   <div class="sb-sec">Settings</div>
   <div class="ni" id="ni-st" onclick="toggleSub('st')">
     <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.4 3.4l.7.7M11.9 11.9l.7.7M3.4 12.6l.7-.7M11.9 4.1l.7-.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
@@ -1513,7 +1538,19 @@ const PERSONAS={
 let currentRole='rm',cur='home',tcOpen=false,stOpen=false,dsfilt='All',tsrch='';
 let bulkRowCnt=2;
 
-function me(){return PERSONAS[currentRole];}
+function me(){
+  if(currentRole.startsWith('emp_')){
+    const empId=currentRole.replace('emp_','');
+    const emp=IM_EMPLOYEES.find(e=>e.id===empId)||IM_EMPLOYEES[0];
+    return{label:'Employee',name:emp.name,email:emp.email,init:emp.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(),myT:[]};
+  }
+  return PERSONAS[currentRole];
+}
+function meEmp(){
+  if(!currentRole.startsWith('emp_'))return null;
+  return IM_EMPLOYEES.find(e=>e.id===currentRole.replace('emp_',''));
+}
+function isEmployee(){return currentRole.startsWith('emp_');}
 function can(p){
   const m={
     rm:   ['submit','track','pool_view'],
@@ -1556,11 +1593,28 @@ function updateBadge(){
   if(unEl){unEl.textContent=unN;unEl.style.display=unN>0?'inline':'none';}
 }
 function switchRole(r){
-  currentRole=r;const p=me();
+  currentRole=r;
+  const p=me();
   document.getElementById('tb-badge').textContent=p.label;
   document.getElementById('tb-user').textContent=p.name;
   document.getElementById('tb-email').textContent=p.email;
   document.getElementById('tb-avatar').textContent=p.init;
+
+  // Employee mode — lock all RMS, navigate to im-jobs (Internal Job Openings tab)
+  if(isEmployee()){
+    ['sni-req','sni-pool','sni-tickets','sni-assign','sni-aiconfig'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.classList.add('lk');
+    });
+    document.querySelectorAll('.ni,.sni').forEach(el=>{
+      const pg=el.getAttribute('data-p')||'';
+      if(!['im-home','im-new','im-cases','im-jobs'].includes(pg)) el.classList.add('lk');
+    });
+    nav('im-jobs');
+    return;
+  }
+  // Un-lock all nav items first
+  document.querySelectorAll('.ni,.sni').forEach(el=>el.classList.remove('lk'));
+
   // New Hiring Request: RM, TL, HRBP, admin
   document.getElementById('sni-req').classList.toggle('lk',!can('submit')&&currentRole!=='tl'&&currentRole!=='admin');
   // Hiring Request Pool: RM, HRBP, HoD, admin (pool_view). Hidden from TL, RCM, HM
@@ -1568,7 +1622,7 @@ function switchRole(r){
   // All Tickets: hidden from RM, HRBP; HM sees own tickets here
   const ticketsEl=document.getElementById('sni-tickets');
   if(ticketsEl)ticketsEl.classList.toggle('lk',currentRole==='rm'||currentRole==='hrbp');
-  // Unassigned Tickets: TL and admin only
+  // Assign Recruiter: TL and admin only
   const assignEl=document.getElementById('sni-assign');
   if(assignEl)assignEl.classList.toggle('lk',currentRole!=='tl'&&currentRole!=='admin');
   // AI Config: admin only
@@ -1581,7 +1635,7 @@ function switchRole(r){
   
   updateBadge();updateInboxBadge();render();
 }
-const PT={'home':'Home','new-request':'New Hiring Request','pool':'Hiring Request Pool','tickets':'All Tickets','assignments':'Unassigned Tickets','approvals':'Approvals','leadpool':'Lead Pool','blacklist':'Blacklist','uac':'User Access Control','roles':'Role & Permission','position':'Position','hub':'Hub','jobtag':'Job Tag','salary':'Salary','document':'Document','datafield':'Data Field','refdata':'Reference Data','mpp':'MPP / ADO Database','scorecard':'Scorecard Config','notifications':'Notification Settings','aiconfig':'AI Configuration'};
+const PT={'home':'Home','new-request':'New Hiring Request','pool':'Hiring Request Pool','tickets':'All Tickets','assignments':'Unassigned Tickets','approvals':'Approvals','leadpool':'Lead Pool','blacklist':'Blacklist','uac':'User Access Control','roles':'Role & Permission','position':'Position','hub':'Hub','jobtag':'Job Tag','salary':'Salary','document':'Document','datafield':'Data Field','refdata':'Reference Data','mpp':'MPP / ADO Database','scorecard':'Scorecard Config','notifications':'Notification Settings','aiconfig':'AI Configuration','im-home':'Internal Movement','im-relocation':'Relocation','im-new':'New Relocation Request','im-cases':'All Cases','im-jobs':'Internal Job Openings','emp-home':'Internal Job Openings','emp-apply':'Internal Job Openings','emp-status':'Internal Job Openings'};
 function toggleSub(k){
   const s=document.getElementById(k+'-sub'),a=document.getElementById(k+'-arr'),n=document.getElementById('ni-'+(k==='tc'?'tc':'st'));
   if(k==='tc'){tcOpen=!tcOpen;s.classList.toggle('open',tcOpen);a.classList.toggle('open',tcOpen);n.classList.toggle('on',tcOpen);}
@@ -1591,8 +1645,15 @@ function nav(p){
   document.querySelectorAll('.ni,.sni').forEach(e=>e.classList.remove('on'));
   const el=document.querySelector('[data-p="'+p+'"]');if(el)el.classList.add('on');
   const tp=['new-request','pool','tickets','assignments'],sp=['uac','roles','position','hub','jobtag','salary','document','datafield','refdata','mpp'];
+  const imp=['im-home','im-new','im-cases','im-relocation','im-jobs','emp-home','emp-apply','emp-status'];
   if(tp.includes(p)&&!tcOpen)toggleSub('tc');
   if(sp.includes(p)&&!stOpen)toggleSub('st');
+  if(imp.includes(p)){
+    const sub=document.getElementById('im-sub');
+    const arr=document.getElementById('im-arr');
+    if(sub){sub.style.maxHeight='600px';}
+    if(arr){arr.textContent='';}
+  }
   cur=p;document.getElementById('tb-title').textContent=PT[p]||p;render();
 }
 function render(){
@@ -1600,7 +1661,10 @@ function render(){
     approvals:pgHiringPool,leadpool:pgLeadPool,blacklist:pgBlacklist,
     uac:pgUAC,roles:pgRoles,position:pgPosition,hub:pgHub,jobtag:pgJobTag,
     salary:pgSalary,document:pgDocument,datafield:pgDataField,refdata:pgRefData,mpp:pgMPP,
-    scorecard:pgScorecardConfig,notifications:pgNotifications,aiconfig:pgAIConfig};
+    scorecard:pgScorecardConfig,notifications:pgNotifications,aiconfig:pgAIConfig,
+    'im-home':pgIMHome,'im-relocation':pgIMRelocation,'im-new':pgIMNew,'im-cases':pgIMCases,
+    'im-jobs':pgIMJobs,
+    'emp-home':pgIMJobs,'emp-apply':pgIMJobs,'emp-status':pgIMJobs};
   document.getElementById('main').innerHTML=(fns[cur]||pgHome)();
 }
 
@@ -6239,186 +6303,90 @@ function pgAssignments(){
   const fullyApproved=t=>t.approvals.every(a=>a.status==='Approved');
   // readyForTL = fully approved AND HRBP has set source of hiring
   const readyForTL=t=>fullyApproved(t)&&!!t.sourceOfHiring;
-  // Unclaimed = ready for TL, no TL yet
-  const unclaimed=applyFilters(TICKETS.filter(t=>readyForTL(t)&&(!t.tl||t.tl==='')));
   // Awaiting HRBP source = fully approved but sourceOfHiring not yet set
   const pendingSource=TICKETS.filter(t=>fullyApproved(t)&&!t.sourceOfHiring&&(!t.tl||t.tl===''));
-  // Claimed = ready for TL, has TL but no RCM yet
-  const claimed=applyFilters(TICKETS.filter(t=>readyForTL(t)&&t.tl&&t.tl!==''&&(!t.rcm||t.rcm==='')));
-  const unclaimedAll=TICKETS.filter(t=>readyForTL(t)&&(!t.tl||t.tl===''));
-  const claimedAll=TICKETS.filter(t=>readyForTL(t)&&t.tl&&t.tl!==''&&(!t.rcm||t.rcm===''));
+  // All tickets ready to have a recruiter assigned (no RCM yet)
+  const toAssign=applyFilters(TICKETS.filter(t=>readyForTL(t)&&(!t.rcm||t.rcm==='')));
+  const toAssignAll=TICKETS.filter(t=>readyForTL(t)&&(!t.rcm||t.rcm===''));
 
   const notifHtml=notifLog.length
     ?notifLog.slice().reverse().slice(0,6).map(n=>`
       <div style="display:flex;gap:9px;padding:8px 0;border-bottom:1px solid var(--border-l);align-items:flex-start">
-        <div style="width:26px;height:26px;border-radius:50%;background:${n.color};display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0">${n.icon}</div>
+        <div style="width:26px;height:26px;border-radius:50%;background:${n.color};display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0"></div>
         <div style="flex:1">
           <div style="font-size:11px;color:var(--navy);line-height:1.4">${n.msg}</div>
-          <div style="font-size:9.5px;color:var(--ink3);margin-top:2px">${n.ts}${n.email?' · 📧 '+n.email:''}</div>
+          <div style="font-size:9.5px;color:var(--ink3);margin-top:2px">${n.ts}${n.email?' · '+n.email:''}</div>
         </div>
       </div>`).join('')
     :'<div style="color:var(--ink3);font-size:11px;padding:8px 0">No notifications yet.</div>';
 
-  const ticketRow=(t,mode)=>{
-    const allA=t.approvals.every(a=>a.status==='Approved'),anyP=t.approvals.some(a=>a.status==='Pending');
-    const appr=allA?'<span class="b ba" style="font-size:9px">All approved ✓</span>':anyP?'<span class="b bp" style="font-size:9px">Pending</span>':'<span class="b" style="font-size:9px;background:var(--navy-ll);color:var(--ink3)">—</span>';
-    const src=`<span style="font-size:9px;padding:2px 7px;border-radius:10px;background:${t.hiringType==='External'?'#E3F2FD':t.hiringType==='Internal'?'#F3E5F5':'#FFF3CD'};color:${t.hiringType==='External'?'#1565C0':t.hiringType==='Internal'?'#6A1B9A':'#856404'}">${t.hiringType||'—'}</span>`;
-    const act=mode==='unclaim'
-      ?`<div style="display:flex;gap:4px"><button class="btn sm" onclick="viewTicket('${t.id}')"></button><button class="btn sm p" onclick="claimTicket('${t.id}')">Claim →</button></div>`
-      :`<div style="display:flex;gap:4px;align-items:center"><button class="btn sm" onclick="viewTicket('${t.id}')"></button><span style="font-size:10px;color:var(--ink3);padding:3px 8px;background:#F0F0F0;border-radius:6px">Claimed · ${t.tl}</span></div>`;
-    return`<tr>
-      <td><span class="mono" style="cursor:pointer;color:var(--spx)" onclick="viewTicket('${t.id}')">${t.id}</span></td>
-      <td style="font-weight:500;font-size:11.5px">${t.roleName}</td>
-      <td style="font-size:10.5px">${t.locCity}</td>
-      <td style="font-size:10.5px;color:var(--ink3)">${t.locProv}</td>
-      <td style="font-size:10px;color:var(--ink3)">${t.stationId||'—'}</td>
-      <td><span style="font-size:9px;padding:2px 7px;border-radius:10px;background:${t.hiringType==='External'?'#E3F2FD':t.hiringType==='Internal'?'#F3E5F5':'#FFF3CD'};color:${t.hiringType==='External'?'#1565C0':t.hiringType==='Internal'?'#6A1B9A':'#856404'}">${t.hiringType||'—'}</span></td>
-      <td>${sbadge(t.status)}</td>
-      <td>${appr}</td>
-      <td>${(isTL()||currentRole==='admin')?priorityBadge(t):''}</td>
-      <td style="text-align:center;font-weight:600">${t.hc||1}</td>
-      <td style="font-size:10.5px">${t.aging}</td>
-      <td>${act}</td>
-    </tr>`;
-  }
-
-  const thead=`<div style="overflow-x:auto"><table style="min-width:880px">
-    <tr><th>CTO ID</th><th>Role name</th><th>City</th><th>Province</th><th>Hub</th><th>Type</th><th>Status</th><th>Approval</th><th>Priority</th><th>HC</th><th>Aging</th><th>Actions</th></tr>`;
-
-  /* UNCLAIMED TAB */
-  const unclaimedContent=`
-    ${pendingSource.length?`<div style="padding:9px 13px;background:var(--warn-l);border-radius:7px;border:1px solid var(--warn-b);font-size:11px;color:var(--warn);margin-bottom:11px">
-      <strong>${pendingSource.length} ticket(s)</strong> fully approved but waiting for HRBP to set source of hiring before entering this queue:
-      <span style="font-family:monospace;font-size:10px"> ${pendingSource.map(t=>t.id).join(', ')}</span>.
-      ${currentRole==='hrbp'||currentRole==='admin'?`<span style="cursor:pointer;text-decoration:underline;margin-left:5px" onclick="nav('tickets')">Go to tickets →</span>`:'HRBP action required.'}
-    </div>`:''}
-    <div style="font-size:11px;color:var(--ink3);margin-bottom:12px">Fully approved tickets with source of hiring confirmed by HRBP. Any TL can claim a ticket before assigning to a recruiter.</div>
-    <div class="card" style="padding:0;overflow:hidden">
-      ${unclaimed.length===0
-        ?`<div style="text-align:center;padding:36px;color:var(--ink3)"><div style="font-size:28px;margin-bottom:8px">✓</div><div style="font-size:13px;font-weight:500">No unclaimed tickets</div><div style="font-size:11px;margin-top:4px">All tickets have been claimed by a TL</div></div>`
-        :thead+unclaimed.map(t=>ticketRow(t,'unclaim')).join('')+'</table></div>'}
-    </div>`;
-
-  /* CLAIMED TAB — group by TL */
-  const byTL={};
-  claimed.forEach(t=>{if(!byTL[t.tl])byTL[t.tl]=[];byTL[t.tl].push(t);});
-  const claimedContent=claimed.length===0
-    ?`<div style="text-align:center;padding:36px;color:var(--ink3)"><div style="font-size:28px;margin-bottom:8px">👆</div><div style="font-size:13px;font-weight:500">No claimed tickets yet</div><div style="font-size:11px;margin-top:4px">Go to the Unclaimed tab and claim a ticket first</div></div>`
-    :Object.entries(byTL).map(([tlName,tickets])=>`
-    <div class="card" style="margin-bottom:12px;border:${tlName===p.name?'1.5px solid var(--spx)':'1px solid #F0F0F0'}">
-      ${tlName===p.name?'<div class="hdr"></div>':''}
-      <div class="ct">
-        <div style="display:flex;align-items:center;gap:9px">
-          <div class="ini" style="${tlName===p.name?'background:var(--spx);color:#fff':''}">${ini(tlName)}</div>
-          <div>
-            <div style="font-size:12.5px;font-weight:600;color:var(--navy)">${tlName}${tlName===p.name?' <span style="font-size:10px;font-weight:400;color:var(--spx)">(you)</span>':''}</div>
-            <div style="font-size:10px;color:var(--ink3)">${tickets.length} ticket(s) claimed — awaiting recruiter assignment</div>
-          </div>
-        </div>
-      </div>
-      <!-- ticket overview table -->
-      <div style="margin-bottom:12px">
-        ${thead}${tickets.map(t=>ticketRow(t,'claimed')).join('')}</table></div>
-      </div>
-      <!-- assign form — only own tickets -->
-      ${tlName===p.name?`
-      <div style="background:var(--navy-ll);border-radius:8px;border:1px solid var(--border);padding:12px 14px">
-        <div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:10px">
-          Assign a recruiter to each ticket
-        </div>
-        ${tickets.map(t=>{
-          const bfColor=t.backfill==='Replacement'?'#FFE0D9':t.backfill==='Expansion'||t.backfill==='New Opening (Expansion)'?'#D4EDDA':t.backfill==='New Hire'?'#E3F2FD':'#F0F4FF';
-          const bfText=t.backfill==='Replacement'?'var(--red)':t.backfill==='Expansion'||t.backfill==='New Opening (Expansion)'?'#155724':t.backfill==='New Hire'?'#1565C0':'var(--navy)';
-          const bfIcon=t.backfill==='Replacement'?'↩':'New Hire'===t.backfill?'✦':'⬆';
-          const agingDays=parseInt(t.aging)||0;
-          const agingColor=agingDays>=21?'var(--red)':agingDays>=14?'#856404':'#155724';
-          const rhLabel={'as':'Attrition — Specialized','ac':'Attrition — Core Revenue','ap':'Attrition — Productivity','gn':'Growth — New Team'}[t.reasonHiring]||t.reasonHiring||'—';
-          return`
-        <div style="padding:12px 0;border-bottom:1px solid #EEE">
-          <!-- Context card -->
-          <div style="display:flex;gap:10px;margin-bottom:10px;padding:10px 12px;background:#fff;border-radius:8px;border:1px solid var(--border)">
-            <!-- Left: type badge + IDs -->
-            <div style="min-width:130px">
-              <span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;background:${bfColor};color:${bfText};margin-bottom:4px">${bfIcon} ${t.backfill||'—'}</span>
-              <div class="mono" style="font-size:10px;color:var(--ink3)">${t.id}</div>
-              <div style="font-size:12px;font-weight:600;color:var(--navy);margin-top:2px;line-height:1.3">${t.roleName}</div>
-            </div>
-            <!-- Middle: location + details -->
-            <div style="flex:1;border-left:1px solid #F0F0F0;padding-left:10px">
-              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">
-                <span style="font-size:9.5px;padding:2px 7px;border-radius:10px;background:var(--navy-ll);color:var(--ink2)">${t.locCity}, ${t.locProv}</span>
-                <span style="font-size:9.5px;padding:2px 7px;border-radius:10px;background:var(--navy-ll);color:var(--ink2)">${t.stationId}</span>
-                <span style="font-size:9.5px;padding:2px 7px;border-radius:10px;background:var(--navy-ll);color:var(--ink2)">${t.opsNonOps||'Ops'}</span>
-                <span style="font-size:9.5px;padding:2px 7px;border-radius:10px;background:var(--navy-ll);color:var(--ink2)">HC: <strong>${t.hc||1}</strong></span>
-                <span style="font-size:9.5px;padding:2px 7px;border-radius:10px;background:var(--navy-ll);color:var(--ink2)">${t.empStatus||'Permanent'}</span>
-                <span style="font-size:9.5px;padding:2px 7px;border-radius:10px;background:${t.hiringType==='External'?'#E3F2FD':t.hiringType==='Internal'?'#F3E5F5':'#FFF3CD'};color:${t.hiringType==='External'?'#1565C0':t.hiringType==='Internal'?'#6A1B9A':'#856404'}">${t.hiringType||'External'}</span>
+  const assignCard=(tickets,label,canAct)=>`<div style="margin-bottom:14px">
+    <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">
+      ${label}
+      <span style="padding:1px 7px;border-radius:10px;font-size:10px;background:${tickets.length?'var(--navy)':'var(--border-l)'};color:${tickets.length?'#fff':'var(--ink3)'};margin-left:5px">${tickets.length}</span>
+    </div>
+    ${tickets.length===0
+      ?`<div style="padding:16px;text-align:center;color:var(--ink3);font-size:11.5px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--border)">
+          No tickets pending assignment.
+          ${pendingSource.length?`<span style="display:block;margin-top:4px;font-size:10.5px;color:var(--warn)">${pendingSource.length} awaiting HRBP source of hiring.</span>`:''}
+        </div>`
+      :tickets.map(t=>{
+        const src=t.sourceOfHiring?`<span class="tag" style="font-size:9px">${t.sourceOfHiring.replace('External — ','').replace('Internal ','')}</span>`:'';
+        return`<div style="background:#fff;border-radius:8px;border:1px solid var(--border);padding:12px 14px;margin-bottom:8px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:${canAct?'9px':'0'};gap:10px;flex-wrap:wrap">
+            <div>
+              <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:4px">
+                <span class="mono" style="cursor:pointer;color:var(--spx);font-size:11px" onclick="viewTicket('${t.id}')">${t.id}</span>
+                ${priorityBadge(t)}
+                ${src}
+                <span style="font-size:10px;color:var(--ink3)">${t.aging} old</span>
               </div>
-              <div style="font-size:10.5px;color:var(--ink3);line-height:1.4">
-                <span style="font-weight:600;color:var(--ink3)">Reason:</span> ${rhLabel}
-              </div>
-              ${t.reason?`<div style="font-size:10px;color:var(--ink3);margin-top:3px;line-height:1.4;font-style:italic">"${t.reason.slice(0,90)}${t.reason.length>90?'…':''}"</div>`:''}
+              <div style="font-size:13px;font-weight:700;color:var(--navy)">${t.roleName}</div>
+              <div style="font-size:10.5px;color:var(--ink3);margin-top:2px">${t.locCity} · ${t.locProv} · ${t.stationId||'—'}</div>
             </div>
-            <!-- Right: aging + priority -->
-            <div style="min-width:80px;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">
-              <div style="font-size:11px;font-weight:700;color:${agingColor}">⏱ ${t.aging}</div>
-              ${(isTL()||currentRole==='admin')?priorityBadge(t):''}
-              <div style="font-size:9px;color:var(--ink3);margin-top:2px">${t.dateInputed}</div>
-            </div>
+            <button class="btn sm" onclick="viewTicket('${t.id}')">View</button>
           </div>
-          <!-- Assign row -->
-          <div style="display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap">
+          ${canAct?`
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding-top:9px;border-top:1px solid var(--border-l)">
             <div style="flex:1;min-width:180px">
               <label>Assign recruiter</label>
-              <select id="rcm-sel-${t.id}" style="font-size:11.5px">
+              <select id="rcm-sel-${t.id}">
                 <option value="">— Select recruiter —</option>
                 ${RECRUITERS.map(r=>{const cnt=TICKETS.filter(x=>x.rcm===r.name&&x.status!=='Done').length;return`<option value="${r.name}">${r.name} · ${r.subTl} · ${cnt} active</option>`;}).join('')}
               </select>
             </div>
             <div style="min-width:110px">
-              <label>Set priority</label>
-              <select id="pri-sel-${t.id}" style="font-size:11.5px;border-color:${t.priority==='P0'?'var(--red)':t.priority==='P1'?'#FFE69C':'#E8E8E8'}">
+              <label>Priority</label>
+              <select id="pri-sel-${t.id}">
                 <option value="P0" ${t.priority==='P0'?'selected':''}>P0 — Critical</option>
                 <option value="P1" ${t.priority==='P1'?'selected':''}>P1 — High</option>
                 <option value="P2" ${t.priority==='P2'?'selected':''}>P2 — Medium</option>
                 <option value="P3" ${t.priority==='P3'?'selected':''}>P3 — Low</option>
               </select>
             </div>
-            <div style="min-width:180px;padding:8px 11px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--inf-b);font-size:10px;color:var(--inf)">
-              Job posting auto-created on assign
-            </div>
             <button class="btn p" style="flex-shrink:0;white-space:nowrap" onclick="assignRCM('${t.id}')">Assign &amp; notify →</button>
           </div>
+          `:''}
         </div>`;}).join('')}
-      </div>
-      `:`<div style="padding:9px 12px;background:var(--navy-ll);border-radius:7px;font-size:11px;color:var(--ink3)">Only ${tlName} can assign recruiters to these tickets.</div>`}
-    </div>`).join('');
+  </div>`;
 
   return`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-    <div class="ptitle">Assignments</div>
+    <div class="ptitle">Assign Recruiter</div>
     ${notifLog.length?`<span style="background:var(--navy-ll);color:var(--ink3);padding:3px 10px;border-radius:20px;font-size:11px">${notifLog.length} notification(s) this session</span>`:''}
   </div>
-  <div class="psub">Claim a ticket from the pool, then assign it to a recruiter from your team</div>
+  <div class="psub">Directly assign a recruiter to approved tickets — no claiming step required</div>
+
+  ${pendingSource.length?`<div style="padding:9px 13px;background:var(--warn-l);border-radius:7px;border:1px solid var(--warn-b);font-size:11px;color:var(--warn);margin-bottom:12px">
+    <strong>${pendingSource.length} ticket(s)</strong> fully approved but waiting for HRBP to set source of hiring:
+    <span style="font-family:monospace;font-size:10px"> ${pendingSource.map(t=>t.id).join(', ')}</span>.
+    ${currentRole==='hrbp'||currentRole==='admin'?`<span style="cursor:pointer;text-decoration:underline;margin-left:5px" onclick="nav('tickets')">Go to tickets →</span>`:'HRBP action required.'}
+  </div>`:''}
+
   ${filterPanel(true)}
   <div style="display:grid;grid-template-columns:1fr 296px;gap:14px">
-    <!-- Main: tabs -->
     <div>
-      <!-- Tab bar -->
-      <div style="display:flex;border-bottom:2px solid #F0F0F0;margin-bottom:16px">
-        <div onclick="assignTab='unclaimed';render()" style="padding:9px 20px;cursor:pointer;font-size:12.5px;font-weight:${assignTab==='unclaimed'?600:400};color:${assignTab==='unclaimed'?'var(--spx)':'#888'};border-bottom:${assignTab==='unclaimed'?'2px solid var(--spx)':'2px solid transparent'};margin-bottom:-2px;transition:all .12s;display:flex;align-items:center;gap:7px">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="8.5" x2="11" y2="8.5" stroke="currentColor" stroke-width="1.2"/></svg>
-          Unclaimed
-          <span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${unclaimedAll.length>0?'var(--spx)':'#E5E5E5'};color:${unclaimedAll.length>0?'#fff':'#AAA'}">${unclaimed.length}${unclaimed.length!==unclaimedAll.length?'/'+unclaimedAll.length:''}</span>
-        </div>
-        <div onclick="assignTab='claimed';render()" style="padding:9px 20px;cursor:pointer;font-size:12.5px;font-weight:${assignTab==='claimed'?600:400};color:${assignTab==='claimed'?'var(--spx)':'#888'};border-bottom:${assignTab==='claimed'?'2px solid var(--spx)':'2px solid transparent'};margin-bottom:-2px;transition:all .12s;display:flex;align-items:center;gap:7px">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 13c0-2.761 2.686-5 6-5" stroke="currentColor" stroke-width="1.3"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.3"/><line x1="10" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="1.3"/></svg>
-          Claimed — Assign Recruiter
-          <span style="padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;background:${claimedAll.length>0?'#1565C0':'#E5E5E5'};color:${claimedAll.length>0?'#fff':'#AAA'}">${claimed.length}${claimed.length!==claimedAll.length?'/'+claimedAll.length:''}</span>
-        </div>
-      </div>
-      ${assignTab==='unclaimed'?unclaimedContent:claimedContent}
+      ${assignCard(toAssign,'Tickets pending recruiter assignment',isTL()||currentRole==='admin')}
     </div>
-
-    <!-- Sidebar -->
     <div>
       <div class="card" style="margin-bottom:12px">
         <div class="hdr"></div>
@@ -6438,12 +6406,10 @@ function pgAssignments(){
       </div>
       <div class="card" style="margin-bottom:12px">
         <div class="hdr"></div>
-        <div class="ct" style="font-size:12px;margin-bottom:10px">Sub-Team Leads
-          <span style="font-size:10px;color:var(--ink3);font-weight:400">auto-notified</span>
-        </div>
+        <div class="ct" style="font-size:12px;margin-bottom:10px">Sub-Team Leads</div>
         ${SUB_TLS.filter(s=>s.tl==='Chandra Wijaya').map(s=>`
         <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border-l)">
-          <div class="ini" style="background:#F3E5F5;color:var(--navy-m)">${ini(s.name)}</div>
+          <div class="ini" style="background:var(--navy-l);color:var(--navy-m)">${ini(s.name)}</div>
           <div style="flex:1"><div style="font-size:11.5px;font-weight:500">${s.name}</div><div style="font-size:10px;color:var(--ink3)">${s.region}</div></div>
         </div>`).join('')}
       </div>
@@ -6454,15 +6420,6 @@ function pgAssignments(){
       </div>
     </div>
   </div>`;
-}
-function claimTicket(tid){
-  const t=TICKETS.find(x=>x.id===tid);if(!t)return;
-  const p=me();
-  t.tl=p.name;
-  const now=new Date();
-  const ts=now.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})+', '+now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-  notifLog.push({icon:'',color:'#E3F2FD',msg:`<strong>${p.name}</strong> claimed ticket <strong>${tid}</strong> (${t.roleName} · ${t.locCity})`,ts,email:''});
-  render();
 }
 
 function assignRCM(tid){
@@ -6481,6 +6438,9 @@ function assignRCM(tid){
 
   const p=me();
   const now_ts=ts();
+  // Auto-assign current TL if not already set (no claim step needed)
+  if(!t.tl||t.tl==='') t.tl=p.name;
+
   if(priVal){t.priority=priVal;t.prioritySetBy=p.name;t.prioritySetAt=now_ts;}
   const stl=rcm?SUB_TLS.find(s=>s.name===rcm.subTl):null;
   const s=stById(t.stationId);
@@ -7439,6 +7399,1486 @@ function pgAIConfig(){
       </div>
     </div>
   </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INTERNAL MOVEMENT MODULE — RELOCATION
+   Stages: 1 Eligibility → 2 Nomination → 3 HRBP Check → 4 Approvals → 5 Execution
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Mock employee data ── */
+const IM_EMPLOYEES=[
+  {id:'EMP-001',name:'Budi Hartono',nik:'3572**********01',role:'SOC Lead',hub:'JKT-BRT-001',city:'Jakarta Barat',province:'DKI Jakarta',
+   tenure:26,performanceGrade:'A',empStatus:'Active',reportingMgr:'Chandra Wijaya',rmEmail:'chandra.wijaya@spxexpress.com',
+   salary:6500000,email:'budi.hartono@spxexpress.com'},
+  {id:'EMP-002',name:'Sari Dewi',nik:'3578**********02',role:'MM Supervisor',hub:'SBY-001',city:'Surabaya',province:'Jawa Timur',
+   tenure:18,performanceGrade:'B',empStatus:'Active',reportingMgr:'Dewi Santika',rmEmail:'dewi.santika@spxexpress.com',
+   salary:7200000,email:'sari.dewi@spxexpress.com'},
+  {id:'EMP-003',name:'Rizky Pratama',nik:'3204**********03',role:'Hub Lead',hub:'BDG-001',city:'Bandung',province:'Jawa Barat',
+   tenure:8,performanceGrade:'B',empStatus:'Active',reportingMgr:'Chandra Wijaya',rmEmail:'chandra.wijaya@spxexpress.com',
+   salary:8000000,email:'rizky.pratama@spxexpress.com'},
+  {id:'EMP-004',name:'Mega Puspita',nik:'3175**********04',role:'Control Tower Supervisor',hub:'JKT-SLT-001',city:'Jakarta Selatan',province:'DKI Jakarta',
+   tenure:14,performanceGrade:'C',empStatus:'Active',reportingMgr:'Chandra Wijaya',rmEmail:'chandra.wijaya@spxexpress.com',
+   salary:7500000,email:'mega.puspita@spxexpress.com'},
+  {id:'EMP-005',name:'Andi Kurniawan',nik:'3501**********05',role:'SOC Team Lead',hub:'SBY-002',city:'Surabaya',province:'Jawa Timur',
+   tenure:36,performanceGrade:'A',empStatus:'Active',reportingMgr:'Dewi Santika',rmEmail:'dewi.santika@spxexpress.com',
+   salary:7800000,email:'andi.kurniawan@spxexpress.com'},
+];
+
+/* ── Mock relocation cases ── */
+const IM_CASES=[
+  {id:'REL-2025-001',type:'Self-Nomination',empId:'EMP-002',empName:'Sari Dewi',
+   currentHub:'SBY-001',currentCity:'Surabaya',targetHub:'JKT-BRT-001',targetCity:'Jakarta Barat',
+   targetRole:'MM Supervisor',submittedAt:'12 Mei 2025',nominatedBy:'Self',
+   stage:'HRBP Check',
+   eligibility:{tenure:{pass:true,value:18,min:12},performance:{pass:true,value:'B',min:'B'}},
+   approvals:{rm:{status:'Approved',by:'Dewi Santika',at:'13 Mei 2025',remark:''},
+     cityLead:{status:'Approved',by:'Dimas Prayoga',at:'14 Mei 2025',remark:''},
+     provinceLead:{status:'Approved',by:'Hendra Kusuma',at:'15 Mei 2025',remark:''},
+     hrbp:{status:'Pending',by:null,at:null,umkCheck:null,benefitCheck:null,benefitApplicable:null},
+     regionHead:{status:'Waiting'},hod:{status:'Waiting'}},
+   benefit:null,effectiveDate:null,history:[
+     {ts:'12 Mei 2025, 09:00',actor:'Sari Dewi',event:'Employee submitted relocation interest'},
+     {ts:'12 Mei 2025, 09:01',actor:'System',event:'Eligibility check passed — tenure 18 months, grade B'},
+     {ts:'13 Mei 2025, 10:30',actor:'Dewi Santika (RM)',event:'Reporting Manager approved'},
+     {ts:'14 Mei 2025, 11:00',actor:'Dimas Prayoga (City Lead)',event:'City Lead approved'},
+     {ts:'15 Mei 2025, 14:00',actor:'Hendra Kusuma (Province Lead)',event:'Province Lead approved'},
+   ]},
+  {id:'REL-2025-002',type:'RM Nomination',empId:'EMP-001',empName:'Budi Hartono',
+   currentHub:'JKT-BRT-001',currentCity:'Jakarta Barat',targetHub:'SBY-001',targetCity:'Surabaya',
+   targetRole:'SOC Lead',submittedAt:'5 Mei 2025',nominatedBy:'Chandra Wijaya',
+   stage:'Approved',
+   eligibility:{tenure:{pass:true,value:26,min:12},performance:{pass:true,value:'A',min:'B'}},
+   approvals:{rm:{status:'Approved',by:'Chandra Wijaya',at:'5 Mei 2025',remark:'Strong performer, ready for new challenge'},
+     cityLead:{status:'Approved',by:'Dimas Prayoga',at:'6 Mei 2025',remark:''},
+     provinceLead:{status:'Approved',by:'Hendra Kusuma',at:'7 Mei 2025',remark:''},
+     hrbp:{status:'Approved',by:'Kamelia Ramandha',at:'8 Mei 2025',umkCheck:{pass:true,empSalary:6500000,targetUMK:4900000},
+       benefitCheck:{pass:true,distance:780,threshold:500},benefitApplicable:true},
+     regionHead:{status:'Approved',by:'Ahmad Basuki',at:'9 Mei 2025',remark:''},
+     hod:{status:'Approved',by:'Budi Hartono (HoD)',at:'10 Mei 2025',remark:''}},
+   benefit:{type:'Relocation benefit',amount:2500000,payrollHandoff:true,handoffAt:'11 Mei 2025'},
+   effectiveDate:'1 Jun 2025',history:[
+     {ts:'5 Mei 2025, 09:00',actor:'Chandra Wijaya (RM)',event:'RM nominated Budi Hartono for relocation'},
+     {ts:'5 Mei 2025, 09:01',actor:'System',event:'Eligibility check passed — tenure 26 months, grade A'},
+     {ts:'5 Mei 2025, 09:02',actor:'System',event:'RM Nomination — RM approval auto-passed'},
+     {ts:'6 Mei 2025, 11:00',actor:'Dimas Prayoga (City Lead)',event:'City Lead approved'},
+     {ts:'7 Mei 2025, 14:00',actor:'Hendra Kusuma (Province Lead)',event:'Province Lead approved'},
+     {ts:'8 Mei 2025, 10:00',actor:'Kamelia Ramandha (HRBP)',event:'HRBP check passed — UMK OK, benefit applicable'},
+     {ts:'9 Mei 2025, 15:00',actor:'Ahmad Basuki (Region Head)',event:'Region Head approved'},
+     {ts:'10 Mei 2025, 10:00',actor:'Budi Hartono (HoD)',event:'HoD approved'},
+     {ts:'11 Mei 2025, 09:00',actor:'Kamelia Ramandha (HRBP)',event:'Payroll handoff submitted — benefit Rp 2,500,000'},
+   ]},
+  {id:'REL-2025-003',type:'Self-Nomination',empId:'EMP-005',empName:'Andi Kurniawan',
+   currentHub:'SBY-002',currentCity:'Surabaya',targetHub:'JKT-SLT-001',targetCity:'Jakarta Selatan',
+   targetRole:'SOC Team Lead',submittedAt:'18 Mei 2025',nominatedBy:'Self',
+   stage:'RM Approval',
+   eligibility:{tenure:{pass:true,value:36,min:12},performance:{pass:true,value:'A',min:'B'}},
+   approvals:{rm:{status:'Pending',by:null,at:null,remark:null},
+     cityLead:{status:'Waiting'},provinceLead:{status:'Waiting'},
+     hrbp:{status:'Waiting'},regionHead:{status:'Waiting'},hod:{status:'Waiting'}},
+   benefit:null,effectiveDate:null,history:[
+     {ts:'18 Mei 2025, 14:00',actor:'Andi Kurniawan',event:'Employee submitted relocation interest'},
+     {ts:'18 Mei 2025, 14:01',actor:'System',event:'Eligibility check passed — tenure 36 months, grade A'},
+   ]},
+];
+
+let imCaseView=null;   // currently viewed case ID
+let imNewStep=1;       // new request wizard step
+let imNewData={};      // new request draft data
+let imEligResult=null; // eligibility check result
+
+/* ── Stage badge ── */
+function imStageBadge(stage){
+  const m={
+    'RM Approval':       ['var(--warn-l)','var(--warn)'],
+    'City Lead Approval':['var(--warn-l)','var(--warn)'],
+    'Province Lead Approval':['var(--warn-l)','var(--warn)'],
+    'HRBP Check':        ['var(--inf-l)','var(--inf)'],
+    'Region Head Approval':['var(--inf-l)','var(--inf)'],
+    'HoD Approval':      ['var(--inf-l)','var(--inf)'],
+    'Execution':         ['var(--navy-l)','var(--navy)'],
+    'Approved':          ['var(--ok-l)','var(--ok)'],
+    'Rejected':          ['var(--err-l)','var(--err)'],
+    'Completed':         ['var(--ok-l)','var(--ok)'],
+  };
+  const [bg,c]=m[stage]||['var(--navy-ll)','var(--ink3)'];
+  return`<span style="padding:2px 9px;border-radius:4px;background:${bg};color:${c};font-size:10.5px;font-weight:600;border:1px solid ${bg}">${stage}</span>`;
+}
+
+/* ── Eligibility check ── */
+function imCheckEligibility(emp){
+  const tenureOk=emp.tenure>=12;
+  const gradeOk=['A','B'].includes(emp.performanceGrade);
+  return{
+    pass:tenureOk&&gradeOk,
+    checks:[
+      {label:'Tenure',pass:tenureOk,value:emp.tenure+' months',min:'12 months',
+       reason:!tenureOk?`Tenure: ${emp.tenure} months — minimum 12 required`:null},
+      {label:'Performance grade',pass:gradeOk,value:'Grade '+emp.performanceGrade,min:'Grade B',
+       reason:!gradeOk?`Performance grade ${emp.performanceGrade} — minimum grade B required`:null},
+      {label:'Employment status',pass:emp.empStatus==='Active',value:emp.empStatus,min:'Active',
+       reason:emp.empStatus!=='Active'?'Employee must be Active':null},
+    ]
+  };
+}
+
+/* ── Eligibility result table ── */
+function imEligibilityTable(result,emp){
+  return`<div class="card" style="margin-bottom:11px;border:1px solid ${result.pass?'var(--ok-b)':'var(--err-b)'}">
+    <div class="hdr"></div>
+    <div class="ct">Eligibility Check — ${emp.name}
+      <span style="padding:2px 10px;border-radius:4px;font-size:10.5px;font-weight:600;
+        background:${result.pass?'var(--ok-l)':'var(--err-l)'};
+        color:${result.pass?'var(--ok)':'var(--err)'};
+        border:1px solid ${result.pass?'var(--ok-b)':'var(--err-b)'}">
+        ${result.pass?'Eligible':'Not eligible'}
+      </span>
+    </div>
+    <table>
+      <tr style="background:var(--navy-ll)">
+        <th>Criteria</th><th>Required</th><th>Actual</th><th>Result</th><th>Reason</th>
+      </tr>
+      ${result.checks.map(c=>`<tr>
+        <td style="font-weight:500">${c.label}</td>
+        <td style="font-size:10.5px;color:var(--ink3)">${c.min}</td>
+        <td style="font-size:11.5px;font-weight:500">${c.value}</td>
+        <td>${c.pass
+          ?`<span class="b ba" style="font-size:10px">Pass</span>`
+          :`<span class="b br" style="font-size:10px">Fail</span>`}</td>
+        <td style="font-size:10.5px;color:var(--err)">${c.reason||'—'}</td>
+      </tr>`).join('')}
+    </table>
+  </div>`;
+}
+
+/* ── Approval chain card ── */
+function imApprovalChain(cas){
+  const steps=[
+    {key:'rm',label:'Reporting Manager',email:cas.type==='RM Nomination'?'Auto-pass':'RM action'},
+    {key:'cityLead',label:'City Lead'},
+    {key:'provinceLead',label:'Province Lead'},
+    {key:'hrbp',label:'HRBP Check'},
+    {key:'regionHead',label:'Region Head'},
+    ...(cas.approvals.hrbp?.benefitApplicable?[{key:'hod',label:'HoD Approval'}]:[]),
+  ];
+  return`<div class="card" style="margin-bottom:11px">
+    <div class="hdr"></div>
+    <div class="ct">Approval Chain</div>
+    ${steps.map((step,i)=>{
+      const a=cas.approvals[step.key];
+      const s=a?.status||'Waiting';
+      const col=s==='Approved'?'var(--ok)':s==='Pending'?'var(--warn)':s==='Rejected'?'var(--err)':'var(--ink3)';
+      const bg=s==='Approved'?'var(--ok-l)':s==='Pending'?'var(--warn-l)':s==='Rejected'?'var(--err-l)':'var(--navy-ll)';
+      return`<div style="display:flex;align-items:flex-start;gap:11px;padding:10px 0;border-bottom:1px solid var(--border-l)">
+        <div style="width:28px;height:28px;border-radius:50%;background:${bg};border:2px solid ${col};
+          display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${col};flex-shrink:0">
+          ${s==='Approved'?'✓':s==='Rejected'?'✕':s==='Pending'?'…':(i+1)}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:11.5px;font-weight:600;color:var(--navy)">${step.label}
+            <span style="font-size:10px;font-weight:400;color:${col};margin-left:7px">${s}</span>
+          </div>
+          ${a?.by?`<div style="font-size:10.5px;color:var(--ink3);margin-top:2px">By ${a.by} · ${a.at}</div>`:''}
+          ${a?.remark?`<div style="font-size:10.5px;color:var(--ink2);margin-top:3px;padding:4px 8px;background:var(--navy-ll);border-radius:5px">"${a.remark}"</div>`:''}
+          ${step.key==='hrbp'&&a?.umkCheck?`<div style="font-size:10px;color:var(--ink3);margin-top:3px">
+            UMK: ${a.umkCheck.pass?'Pass':'Fail'} — Salary Rp ${a.umkCheck.empSalary?.toLocaleString('id-ID')} vs UMK Rp ${a.umkCheck.targetUMK?.toLocaleString('id-ID')} ·
+            Distance: ${a.benefitCheck?.distance}km (${a.benefitApplicable?'benefit applicable':'no benefit'})
+          </div>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+/* ── History timeline ── */
+function imHistory(cas){
+  return`<div class="card" style="margin-bottom:11px">
+    <div class="hdr"></div>
+    <div class="ct">Case history</div>
+    ${cas.history.map((h,i)=>`
+    <div style="display:flex;gap:10px;padding:8px 0;border-bottom:${i<cas.history.length-1?'1px solid var(--border-l)':'none'}">
+      <div style="min-width:9px;margin-top:5px">
+        <div style="width:9px;height:9px;border-radius:50%;background:var(--navy);flex-shrink:0"></div>
+      </div>
+      <div>
+        <div style="font-size:11.5px;font-weight:500;color:var(--ink)">${h.event}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:2px">${h.ts} · ${h.actor}</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+/* ── IM Home page ── */
+function pgIMHome(){
+  const total=IM_CASES.length;
+  const pending=IM_CASES.filter(c=>!['Approved','Completed','Rejected'].includes(c.stage)).length;
+  const approved=IM_CASES.filter(c=>c.stage==='Approved'||c.stage==='Completed').length;
+  const needsMe=IM_CASES.filter(c=>{
+    if(currentRole==='hrbp') return c.approvals.hrbp?.status==='Pending';
+    return false;
+  }).length;
+  return`<div class="ptitle">Internal Movement</div>
+  <div class="psub">Manage employee relocation requests end-to-end</div>
+  <div class="kgrid">
+    <div class="kpi k1"><div class="kl">Total cases</div><div class="kv">${total}</div><div class="ks">All time</div></div>
+    <div class="kpi k2"><div class="kl">In progress</div><div class="kv">${pending}</div><div class="ks">Awaiting action</div></div>
+    <div class="kpi k3"><div class="kl">Approved</div><div class="kv">${approved}</div></div>
+    <div class="kpi k4"><div class="kl">Needs my action</div><div class="kv">${needsMe||'—'}</div></div>
+  </div>
+  ${needsMe?`<div class="wbox">${needsMe} case(s) awaiting your action. <span style="cursor:pointer;text-decoration:underline;color:var(--warn)" onclick="nav('im-cases')">View cases →</span></div>`:''}
+  <div style="display:flex;gap:11px">
+    <div style="flex:2">
+      <div class="card"><div class="hdr"></div><div class="ct">Recent cases
+        <button class="btn sm p" onclick="nav('im-cases')">All cases →</button></div>
+        <table><tr><th>Case ID</th><th>Employee</th><th>Type</th><th>Route</th><th>Stage</th><th>Submitted</th><th></th></tr>
+        ${IM_CASES.slice(0,5).map(c=>`<tr>
+          <td><span class="mono" style="cursor:pointer;color:var(--spx)" onclick="imViewCase('${c.id}')">${c.id}</span></td>
+          <td style="font-weight:500">${c.empName}</td>
+          <td><span class="tag" style="font-size:9.5px">${c.type}</span></td>
+          <td style="font-size:10.5px;color:var(--ink3)">${c.currentCity} → ${c.targetCity}</td>
+          <td>${imStageBadge(c.stage)}</td>
+          <td style="font-size:10.5px;color:var(--ink3)">${c.submittedAt}</td>
+          <td><button class="btn sm" onclick="imViewCase('${c.id}')">View</button></td>
+        </tr>`).join('')}
+        </table>
+      </div>
+    </div>
+    <div style="flex:1">
+      <div class="card"><div class="hdr"></div><div class="ct">Quick actions</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn p" onclick="nav('im-new')" style="justify-content:center">+ New relocation request</button>
+          <button class="btn" onclick="nav('im-cases')" style="justify-content:center">View all cases</button>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border-l)">
+          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px">Module coverage</div>
+          ${[['Relocation','Active'],['Internal Transfer','Coming soon'],['Promotion','Coming soon']].map(([m,s])=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border-l)">
+            <span style="font-size:11.5px;font-weight:500">${m}</span>
+            <span class="b ${s==='Active'?'ba':'bp'}" style="font-size:9px">${s}</span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── IM All Cases ── */
+function pgIMCases(){
+  const cases=IM_CASES;
+  if(imCaseView){
+    const cas=IM_CASES.find(c=>c.id===imCaseView);
+    if(cas) return imCaseDetail(cas);
+    imCaseView=null;
+  }
+  return`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div class="ptitle">All Cases</div>
+    <button class="btn p" onclick="nav('im-new')">+ New request</button>
+  </div>
+  <div class="psub">All relocation and internal movement cases</div>
+  <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto">
+  <table style="min-width:900px">
+    <tr><th>Case ID</th><th>Employee</th><th>Type</th><th>Current hub</th><th>Target hub</th><th>Stage</th><th>Submitted</th><th>Benefit</th><th>Actions</th></tr>
+    ${cases.map(c=>`<tr>
+      <td><span class="mono" style="cursor:pointer;color:var(--spx)" onclick="imViewCase('${c.id}')">${c.id}</span></td>
+      <td style="font-weight:500">${c.empName}</td>
+      <td><span class="tag" style="font-size:9.5px">${c.type}</span></td>
+      <td style="font-size:10.5px">${c.currentCity} / ${c.currentHub}</td>
+      <td style="font-size:10.5px">${c.targetCity} / ${c.targetHub}</td>
+      <td>${imStageBadge(c.stage)}</td>
+      <td style="font-size:10.5px;color:var(--ink3)">${c.submittedAt}</td>
+      <td>${c.approvals.hrbp?.benefitApplicable===true
+        ?`<span class="b ba" style="font-size:10px">With benefit</span>`
+        :c.approvals.hrbp?.benefitApplicable===false
+        ?`<span class="b" style="font-size:10px;background:var(--navy-ll);color:var(--ink3)">No benefit</span>`
+        :`<span style="font-size:10.5px;color:var(--border)">Pending HRBP</span>`}</td>
+      <td><button class="btn sm" onclick="imViewCase('${c.id}')">View</button></td>
+    </tr>`).join('')}
+  </table></div></div>`;
+}
+
+function imViewCase(id){imCaseView=id;nav('im-cases');}
+
+/* ── Case detail ── */
+function imCaseDetail(cas){
+  const emp=IM_EMPLOYEES.find(e=>e.id===cas.empId)||{};
+  const isHRBP=currentRole==='hrbp'||currentRole==='admin';
+  const canApproveRM=(currentRole==='admin');
+
+  return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <button class="btn ghost" onclick="imCaseView=null;nav('im-cases')">← Back to cases</button>
+    <div style="font-size:15px;font-weight:700;color:var(--navy)">${cas.id}</div>
+    ${imStageBadge(cas.stage)}
+    <span class="tag" style="font-size:10px">${cas.type}</span>
+  </div>
+
+  <!-- Summary strip -->
+  <div class="card" style="margin-bottom:11px">
+    <div class="hdr"></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px">
+      ${[['Employee',cas.empName],['From',cas.currentCity+' / '+cas.currentHub],
+         ['To',cas.targetCity+' / '+cas.targetHub],['Role',cas.targetRole],
+         ['Type',cas.type],['Nominated by',cas.nominatedBy],
+         ['Submitted',cas.submittedAt],['Effective date',cas.effectiveDate||'TBD'],
+      ].map(([l,v])=>`<div style="padding:7px 10px;background:var(--navy-ll);border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">${l}</div>
+        <div style="font-size:11.5px;font-weight:500;color:var(--navy)">${v||'—'}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- Eligibility result -->
+  ${imEligibilityTable(cas.eligibility.pass!==undefined?{
+    pass:cas.eligibility.tenure.pass&&cas.eligibility.performance.pass,
+    checks:[
+      {label:'Tenure',pass:cas.eligibility.tenure.pass,value:cas.eligibility.tenure.value+' months',min:'12 months',reason:!cas.eligibility.tenure.pass?'Tenure below minimum':null},
+      {label:'Performance grade',pass:cas.eligibility.performance.pass,value:'Grade '+cas.eligibility.performance.value,min:'Grade B',reason:!cas.eligibility.performance.pass?'Grade below minimum B':null},
+      {label:'Employment status',pass:true,value:'Active',min:'Active',reason:null},
+    ]}:{pass:false,checks:[]},emp)}
+
+  <!-- Approval chain -->
+  ${imApprovalChain(cas)}
+
+  <!-- HRBP Check panel (shown if in HRBP Check stage and user is HRBP/admin) -->
+  ${cas.stage==='HRBP Check'&&isHRBP&&cas.approvals.hrbp?.status==='Pending'?`
+  <div class="card" style="margin-bottom:11px;border:1px solid var(--inf-b)">
+    <div class="hdr"></div>
+    <div class="ct" style="color:var(--inf)">HRBP Validation</div>
+
+    <!-- UMK Check -->
+    <div class="fsec">
+      <div class="fstitle">UMK Check (4.1)</div>
+      <div class="fg3">
+        <div><label>Employee current salary</label>
+          <div style="padding:7px 10px;background:var(--navy-ll);border-radius:6px;font-size:12px;font-weight:600;color:var(--navy)">
+            Rp ${emp.salary?.toLocaleString('id-ID')||'—'}
+          </div></div>
+        <div><label>Target city UMK</label>
+          <input type="number" id="hrbp-umk-${cas.id}" placeholder="e.g. 4900000"
+            style="font-size:12px;font-weight:600"/></div>
+        <div><label>UMK result</label>
+          <select id="hrbp-umk-result-${cas.id}">
+            <option value="pass">Pass — salary above UMK</option>
+            <option value="fail">Fail — salary below UMK</option>
+          </select></div>
+      </div>
+    </div>
+
+    <!-- Benefit Check -->
+    <div class="fsec">
+      <div class="fstitle">Benefit Check (4.2)</div>
+      <div class="fg3">
+        <div><label>Distance (km)</label>
+          <input type="number" id="hrbp-dist-${cas.id}" placeholder="e.g. 780"/></div>
+        <div><label>Benefit threshold (km)</label>
+          <input type="number" id="hrbp-thresh-${cas.id}" value="500"/></div>
+        <div><label>Benefit applicable?</label>
+          <select id="hrbp-benefit-${cas.id}">
+            <option value="yes">Yes — benefit applicable</option>
+            <option value="no">No — no benefit</option>
+          </select></div>
+      </div>
+    </div>
+
+    <!-- Routing outcome -->
+    <div class="fsec">
+      <div class="fstitle">Routing (4.3)</div>
+      <div style="padding:9px 12px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--border);font-size:11.5px;color:var(--ink2);margin-bottom:9px">
+        System will auto-route based on your benefit determination:
+        <strong>Region Head + HoD</strong> (benefit applicable) or <strong>Region Head only</strong> (no benefit).
+      </div>
+      <div><label>HRBP remarks</label>
+        <textarea id="hrbp-remark-${cas.id}" rows="2" placeholder="Optional remarks…"></textarea></div>
+    </div>
+
+    <button class="btn p" onclick="imHRBPSubmit('${cas.id}')">Submit HRBP check</button>
+  </div>`:''}
+
+  <!-- RM approval panel -->
+  ${cas.stage==='RM Approval'&&canApproveRM?`
+  <div class="card" style="margin-bottom:11px;border:1px solid var(--warn-b)">
+    <div class="hdr"></div>
+    <div class="ct" style="color:var(--warn)">Reporting Manager Approval</div>
+    <div><label>Remarks</label>
+      <textarea id="rm-remark-${cas.id}" rows="2" placeholder="Optional remarks…"></textarea></div>
+    <div style="display:flex;gap:7px;margin-top:9px">
+      <button class="btn p" onclick="imApprove('${cas.id}','rm','Approved')">Approve</button>
+      <button class="btn danger" onclick="imApprove('${cas.id}','rm','Rejected')">Reject</button>
+    </div>
+  </div>`:''}
+
+  <!-- Execution panel (benefit path) -->
+  ${cas.stage==='Approved'&&cas.benefit?.type&&!cas.benefit.payrollHandoff&&isHRBP?`
+  <div class="card" style="margin-bottom:11px;border:1px solid var(--ok-b)">
+    <div class="hdr"></div>
+    <div class="ct" style="color:var(--ok)">Stage 5 — Execution</div>
+    <div class="fg2" style="margin-bottom:9px">
+      <div><label>Effective date</label>
+        <input type="date" id="exec-date-${cas.id}"/></div>
+      <div><label>Relocation benefit amount (Rp)</label>
+        <input type="number" id="exec-benefit-${cas.id}" placeholder="e.g. 2500000"/></div>
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn p" onclick="imExecute('${cas.id}')">Submit payroll handoff & execute</button>
+    </div>
+  </div>`:''}
+
+  <!-- Completed execution banner -->
+  ${cas.benefit?.payrollHandoff?`
+  <div style="padding:11px 14px;background:var(--ok-l);border-radius:8px;border:1px solid var(--ok-b);margin-bottom:11px">
+    <div style="font-weight:600;font-size:12px;color:var(--ok);margin-bottom:3px">Relocation completed</div>
+    <div style="font-size:11.5px;color:var(--ok)">
+      Payroll handoff submitted ${cas.benefit.handoffAt} · Effective date: ${cas.effectiveDate} · Benefit: Rp ${cas.benefit.amount?.toLocaleString('id-ID')||'—'}
+    </div>
+  </div>`:''}
+
+  <!-- History -->
+  ${imHistory(cas)}`;
+}
+
+/* ── HRBP submit ── */
+function imHRBPSubmit(caseId){
+  const cas=IM_CASES.find(c=>c.id===caseId);if(!cas)return;
+  const umk=parseInt(document.getElementById('hrbp-umk-'+caseId)?.value)||0;
+  const umkResult=document.getElementById('hrbp-umk-result-'+caseId)?.value==='pass';
+  const dist=parseInt(document.getElementById('hrbp-dist-'+caseId)?.value)||0;
+  const thresh=parseInt(document.getElementById('hrbp-thresh-'+caseId)?.value)||500;
+  const benefitApplicable=document.getElementById('hrbp-benefit-'+caseId)?.value==='yes';
+  const remark=document.getElementById('hrbp-remark-'+caseId)?.value||'';
+  const emp=IM_EMPLOYEES.find(e=>e.id===cas.empId)||{};
+  const now=ts();
+  cas.approvals.hrbp={
+    status:'Approved',by:me().name,at:now,
+    umkCheck:{pass:umkResult,empSalary:emp.salary,targetUMK:umk},
+    benefitCheck:{pass:dist>=thresh,distance:dist,threshold:thresh},
+    benefitApplicable,
+  };
+  // Auto-route next stage
+  if(benefitApplicable){
+    cas.stage='Region Head Approval';
+    cas.approvals.regionHead={status:'Pending'};
+    cas.approvals.hod={status:'Waiting'};
+  }else{
+    cas.stage='Region Head Approval';
+    cas.approvals.regionHead={status:'Pending'};
+    delete cas.approvals.hod; // no HoD for no-benefit path
+  }
+  cas.benefit={type:benefitApplicable?'Relocation benefit':null,amount:null,payrollHandoff:false};
+  cas.history.push({ts:now,actor:me().name+' (HRBP)',event:`HRBP check ${benefitApplicable?'passed — benefit applicable':'passed — no benefit'}. Routed to ${benefitApplicable?'Region Head + HoD':'Region Head only'}`});
+  if(remark) cas.history.push({ts:now,actor:me().name,event:'HRBP remark: '+remark});
+  nav('im-cases');
+}
+
+/* ── Generic approve ── */
+function imApprove(caseId,layer,decision){
+  const cas=IM_CASES.find(c=>c.id===caseId);if(!cas)return;
+  const remark=document.getElementById(layer+'-remark-'+caseId)?.value||'';
+  const now=ts();
+  cas.approvals[layer]={status:decision,by:me().name,at:now,remark};
+  cas.history.push({ts:now,actor:me().name,event:`${layer} ${decision}`+(remark?` — "${remark}"`:'')});
+  // Advance stage
+  const stageMap={rm:'City Lead Approval',cityLead:'Province Lead Approval',
+    provinceLead:'HRBP Check',hrbp:'Region Head Approval',regionHead:cas.approvals.hod?'HoD Approval':'Approved'};
+  if(decision==='Approved') cas.stage=stageMap[layer]||cas.stage;
+  if(decision==='Rejected') cas.stage='Rejected';
+  nav('im-cases');
+}
+
+/* ── Execute relocation ── */
+function imExecute(caseId){
+  const cas=IM_CASES.find(c=>c.id===caseId);if(!cas)return;
+  const date=document.getElementById('exec-date-'+caseId)?.value||'';
+  const amount=parseInt(document.getElementById('exec-benefit-'+caseId)?.value)||0;
+  const now=ts();
+  cas.benefit.payrollHandoff=true;cas.benefit.handoffAt=now;cas.benefit.amount=amount;
+  cas.effectiveDate=date;cas.stage='Completed';
+  cas.history.push({ts:now,actor:me().name+' (HRBP)',event:`Payroll handoff submitted — benefit Rp ${amount.toLocaleString('id-ID')}`});
+  cas.history.push({ts:now,actor:'System',event:`Employee notified — relocation effective ${date||'TBD'}`});
+  nav('im-cases');
+}
+
+/* ── New relocation request wizard ── */
+function pgIMNew(){
+  const step=imNewStep;
+  const isHRBP=currentRole==='hrbp'||currentRole==='admin';
+  return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <button class="btn ghost" onclick="imNewStep=1;imNewData={};imEligResult=null;nav('im-cases')">← Cancel</button>
+    <div class="ptitle" style="margin-bottom:0">New Relocation Request</div>
+  </div>
+
+  <!-- Step progress -->
+  <div style="display:flex;align-items:center;gap:0;margin-bottom:18px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    ${[['1','Employee & eligibility'],['2','Job post & nomination'],['3','Confirmation']].map(([n,label],i)=>`
+    <div style="flex:1;padding:9px 12px;border-right:${i<2?'1px solid var(--border)':'none'};
+      background:${step===i+1?'var(--navy)':step>i+1?'var(--ok-l)':'#fff'}">
+      <div style="font-size:9.5px;font-weight:600;color:${step===i+1?'rgba(255,255,255,.6)':step>i+1?'var(--ok)':'var(--ink3)'};text-transform:uppercase;letter-spacing:.04em">${'Step '+n}</div>
+      <div style="font-size:11.5px;font-weight:600;color:${step===i+1?'#fff':step>i+1?'var(--ok)':'var(--ink2)'};margin-top:1px">${label}</div>
+    </div>`).join('')}
+  </div>
+
+  <!-- Step 1: Employee lookup + eligibility ── -->
+  ${step===1?`
+  <div class="card" style="margin-bottom:11px">
+    <div class="hdr"></div>
+    <div class="ct">Step 1 — Employee & eligibility check</div>
+    <div class="fg2" style="margin-bottom:12px">
+      <div><label>Nomination type</label>
+        <select id="im-type" onchange="imNewData.type=this.value">
+          <option value="">Select type...</option>
+          <option value="Self-Nomination">Employee self-nomination</option>
+          <option value="RM Nomination">Reporting Manager nomination</option>
+        </select></div>
+      <div><label>Employee</label>
+        <select id="im-emp" onchange="imNewData.empId=this.value;imEligResult=null;render()">
+          <option value="">Select employee...</option>
+          ${IM_EMPLOYEES.map(e=>`<option value="${e.id}">${e.name} — ${e.role}, ${e.city}</option>`).join('')}
+        </select></div>
+    </div>
+    ${imNewData.empId?`
+    ${(()=>{
+      const emp=IM_EMPLOYEES.find(e=>e.id===imNewData.empId);if(!emp)return '';
+      const result=imCheckEligibility(emp);
+      imEligResult=result;
+      return imEligibilityTable(result,emp)+`
+      <div style="padding:9px 12px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--border);font-size:11px;color:var(--ink2)">
+        <strong>Current position:</strong> ${emp.role} · ${emp.hub} · ${emp.city}<br>
+        <strong>Reporting Manager:</strong> ${emp.reportingMgr}
+      </div>`;
+    })()}
+    ${imEligResult?.pass?`
+    <div style="margin-top:12px;display:flex;gap:7px">
+      <button class="btn p" onclick="imNewStep=2;render()">Continue to Step 2 →</button>
+    </div>`:`<div class="rbox" style="margin-top:11px">Employee does not meet eligibility criteria. Relocation request cannot proceed.</div>`}
+    `:''}
+  </div>`:''}
+
+  <!-- Step 2: Job post + nomination ── -->
+  ${step===2?`
+  <div class="card" style="margin-bottom:11px">
+    <div class="hdr"></div>
+    <div class="ct">Step 2 — Job post & nomination details</div>
+    <div class="fg2" style="margin-bottom:11px">
+      <div><label>Target hub</label>
+        <select id="im-target-hub" onchange="imNewData.targetHub=this.value">
+          <option value="">Select target hub...</option>
+          ${[...new Set(STATIONS.map(s=>s.id))].map(s=>`<option value="${s}" ${imNewData.targetHub===s?'selected':''}>${s}</option>`).join('')}
+        </select></div>
+      <div><label>Target city</label>
+        <input id="im-target-city" value="${imNewData.targetCity||''}" placeholder="e.g. Jakarta Barat"
+          oninput="imNewData.targetCity=this.value"/></div>
+      <div><label>Target role</label>
+        <input id="im-target-role" value="${imNewData.targetRole||''}" placeholder="e.g. SOC Lead"
+          oninput="imNewData.targetRole=this.value"/></div>
+      <div><label>Related ticket / job post</label>
+        <select id="im-ticket" onchange="imNewData.ticketId=this.value">
+          <option value="">No linked ticket (open nomination)</option>
+          ${TICKETS.filter(t=>t.sourceOfHiring&&t.sourceOfHiring.includes('Internal')).map(t=>`<option value="${t.id}" ${imNewData.ticketId===t.id?'selected':''}>${t.id} — ${t.roleName} · ${t.locCity}</option>`).join('')}
+        </select></div>
+    </div>
+    ${imNewData.type==='RM Nomination'?`
+    <div class="fsec"><div class="fstitle">RM nomination details</div>
+      <div><label>Nomination reason</label>
+        <textarea id="im-nom-reason" rows="3" placeholder="Why is this employee being nominated for relocation?"
+          oninput="imNewData.nominationReason=this.value">${imNewData.nominationReason||''}</textarea></div>
+    </div>`:''}
+    <div style="display:flex;gap:7px">
+      <button class="btn ghost" onclick="imNewStep=1;render()">← Back</button>
+      <button class="btn p" onclick="imNewStep=3;render()">Continue to Step 3 →</button>
+    </div>
+  </div>`:''}
+
+  <!-- Step 3: Review + submit ── -->
+  ${step===3?`
+  <div class="card" style="margin-bottom:11px">
+    <div class="hdr"></div>
+    <div class="ct">Step 3 — Review & submit</div>
+    ${(()=>{
+      const emp=IM_EMPLOYEES.find(e=>e.id===imNewData.empId)||{};
+      return`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px">
+        ${[['Employee',emp.name],['Current role',emp.role],['Current hub',emp.hub],
+           ['Target hub',imNewData.targetHub||'—'],['Target city',imNewData.targetCity||'—'],
+           ['Target role',imNewData.targetRole||'—'],['Nomination type',imNewData.type||'—'],
+           ['Nominated by',imNewData.type==='Self-Nomination'?emp.name:me().name],
+           ['Linked ticket',imNewData.ticketId||'None'],
+        ].map(([l,v])=>`<div style="padding:7px 10px;background:var(--navy-ll);border-radius:6px;border:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">${l}</div>
+          <div style="font-size:11.5px;font-weight:500;color:var(--navy)">${v}</div>
+        </div>`).join('')}
+      </div>
+      <div class="ibox" style="margin-bottom:12px">After submission, the case will enter the approval chain: RM → City Lead → Province Lead → HRBP Check → Region Head (+ HoD if benefit applicable).</div>
+      <div style="display:flex;gap:7px">
+        <button class="btn ghost" onclick="imNewStep=2;render()">← Back</button>
+        <button class="btn p" onclick="imSubmitNew()">Submit relocation request</button>
+      </div>`;
+    })()}
+  </div>`:''}`;
+}
+
+function imSubmitNew(){
+  const emp=IM_EMPLOYEES.find(e=>e.id===imNewData.empId);
+  if(!emp||!imNewData.type||!imNewData.targetHub) {alert('Fill all required fields.');return;}
+  const now=ts();
+  const newId='REL-'+new Date().getFullYear()+'-'+String(IM_CASES.length+1).padStart(3,'0');
+  const newCase={
+    id:newId,type:imNewData.type,empId:emp.id,empName:emp.name,
+    currentHub:emp.hub,currentCity:emp.city,
+    targetHub:imNewData.targetHub,targetCity:imNewData.targetCity||'—',
+    targetRole:imNewData.targetRole||'—',
+    submittedAt:now,nominatedBy:imNewData.type==='Self-Nomination'?emp.name:me().name,
+    stage:'RM Approval',
+    eligibility:{tenure:{pass:emp.tenure>=12,value:emp.tenure,min:12},performance:{pass:['A','B'].includes(emp.performanceGrade),value:emp.performanceGrade,min:'B'}},
+    approvals:{rm:{status:imNewData.type==='RM Nomination'?'Approved':'Pending'},
+      cityLead:{status:'Waiting'},provinceLead:{status:'Waiting'},
+      hrbp:{status:'Waiting'},regionHead:{status:'Waiting'},hod:{status:'Waiting'}},
+    benefit:null,effectiveDate:null,
+    history:[
+      {ts:now,actor:imNewData.type==='Self-Nomination'?emp.name:me().name,
+       event:`${imNewData.type} submitted — relocation ${emp.city} → ${imNewData.targetCity||imNewData.targetHub}`},
+      {ts:now,actor:'System',event:`Eligibility check passed — tenure ${emp.tenure} months, grade ${emp.performanceGrade}`},
+      ...(imNewData.type==='RM Nomination'?[{ts:now,actor:'System',event:'RM Nomination — RM approval auto-passed'}]:[]),
+    ],
+  };
+  if(imNewData.type==='RM Nomination') newCase.stage='City Lead Approval';
+  IM_CASES.push(newCase);
+  imNewStep=1;imNewData={};imEligResult=null;
+  imCaseView=newId;nav('im-cases');
+}
+
+function pgIMRelocation(){return pgIMCases();}
+
+/* ═══════════════════════════════════════════════════════════════
+   EMPLOYEE-FACING PAGES — Internal Movement / Relocation Portal
+═══════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════
+   EMPLOYEE PORTAL — Internal Job Board & Application Flow
+   Flow: HRBP publishes job post → Employee browses → applies
+         → RM approves → City Lead → Province Lead → HRBP Check
+         → Region Head (→ HoD if benefit) → Execute
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Internal job posts (published from Internal/Hybrid tickets by HRBP) ── */
+const IM_JOB_POSTS=[
+  {id:'IJP-001',ticketId:'CTO-2025-0043',title:'SOC Lead',location:'Jakarta Barat',
+   hub:'JKT-BRT-001',province:'DKI Jakarta',empStatus:'Permanent',
+   postedAt:'10 Mei 2025',postedBy:'Kamelia Ramandha',active:true,
+   description:'Memimpin operasional SOC di Jakarta Barat Hub. Bertanggung jawab atas manajemen tim SOC, monitoring KPI harian, dan eskalasi isu operasional.',
+   requirements:'Min. 1 tahun pengalaman sebagai SOC Lead atau setara. Familiar dengan sistem tracking & WMS.',
+   applicants:[]},
+  {id:'IJP-002',ticketId:'CTO-2025-0045',title:'SOC Shift Lead',location:'Surabaya',
+   hub:'SBY-001',province:'Jawa Timur',empStatus:'Permanent',
+   postedAt:'11 Mei 2025',postedBy:'Kamelia Ramandha',active:true,
+   description:'Memimpin shift operasional SOC di Surabaya Hub. Koordinasi antar shift dan monitoring real-time volume paket.',
+   requirements:'Min. 1 tahun pengalaman di operasional SOC atau hub lead. Bersedia shifting.',
+   applicants:[]},
+  {id:'IJP-003',ticketId:'CTO-2025-0073',title:'Driver Management Supervisor',location:'Jakarta Barat',
+   hub:'JKT-BRT-002',province:'DKI Jakarta',empStatus:'Permanent',
+   postedAt:'12 Mei 2025',postedBy:'Kamelia Ramandha',active:true,
+   description:'Memimpin tim driver management, bertanggung jawab atas produktivitas driver, kepatuhan SOP, dan hubungan dengan mitra driver.',
+   requirements:'Min. 1 tahun pengalaman di driver management atau operasional lapangan.',
+   applicants:[
+     {empId:'EMP-002',empName:'Sari Dewi',status:'RM Approval',submittedAt:'14 Mei 2025',
+      reason:'Saya ingin berkembang di bidang driver management dan posisi ini sesuai dengan aspirasi karir saya.',
+      approvals:{rm:{status:'Pending',by:null,at:null,remark:null},
+        cityLead:{status:'Waiting'},provinceLead:{status:'Waiting'}}},
+   ]},
+];
+
+/* ── Applications data (separate from IM_CASES which is for HRBP view) ── */
+const IM_APPLICATIONS=[];
+// seed: Sari Dewi applied to IJP-003, RM pending
+IM_APPLICATIONS.push({
+  id:'IMAPP-001',jobId:'IJP-003',empId:'EMP-002',empName:'Sari Dewi',
+  jobTitle:'Driver Management Supervisor',jobHub:'JKT-BRT-002',jobCity:'Jakarta Barat',
+  currentRole:'MM Supervisor',currentHub:'SBY-001',currentCity:'Surabaya',
+  submittedAt:'14 Mei 2025',
+  reason:'Saya ingin berkembang di bidang driver management dan posisi ini sesuai dengan aspirasi karir saya.',
+  approvals:{
+    rm:{status:'Pending',by:null,at:null,remark:null},
+    cityLead:{status:'Waiting',by:null,at:null},
+    provinceLead:{status:'Waiting',by:null,at:null},
+    hrbp:{status:'Waiting',by:null,at:null},
+    regionHead:{status:'Waiting',by:null,at:null},
+  },
+  stage:'RM Approval',
+  history:[
+    {ts:'14 Mei 2025, 10:22',actor:'Sari Dewi',event:'Employee submitted interest — Driver Management Supervisor (JKT-BRT-002)'},
+    {ts:'14 Mei 2025, 10:22',actor:'System',event:'Eligibility check passed — tenure 18 months, grade B'},
+    {ts:'14 Mei 2025, 10:23',actor:'System',event:'RM Dewi Santika notified for approval'},
+  ],
+});
+
+/* ── State variables ── */
+let empApplyJobId=null;   // job post being applied to
+let empApplyStep=1;       // application wizard step (1-4)
+let empAppData={};        // draft application data
+let empViewAppId=null;    // application being viewed in status page
+
+/* ── Employee Home — job board ── */
+function pgEmpHome(){
+  const emp=meEmp();
+  if(!emp) return`<div class="ptitle">Employee Portal</div>`;
+  const elig=imCheckEligibility(emp);
+  const myApps=IM_APPLICATIONS.filter(a=>a.empId===emp.id);
+  const openJobs=IM_JOB_POSTS.filter(j=>j.active);
+  // Has the employee already applied to a job?
+  const appliedJobIds=new Set(myApps.map(a=>a.jobId));
+
+  return`
+  <!-- Profile strip -->
+  <div style="display:flex;align-items:center;gap:14px;padding:14px 17px;background:var(--navy);border-radius:10px;margin-bottom:14px;color:#fff">
+    <div style="width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0">
+      ${emp.name.split(' ').map(w=>w[0]).join('').slice(0,2)}
+    </div>
+    <div style="flex:1">
+      <div style="font-size:15px;font-weight:700">${emp.name}</div>
+      <div style="font-size:11.5px;opacity:.7;margin-top:2px">${emp.role} · ${emp.hub} · ${emp.city}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;opacity:.5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Eligibility</div>
+      <span style="padding:3px 11px;border-radius:4px;font-size:11px;font-weight:700;
+        background:${elig.pass?'rgba(255,255,255,.2)':'rgba(255,100,80,.3)'};color:#fff">
+        ${elig.pass?'Eligible to apply':'Not eligible'}
+      </span>
+    </div>
+  </div>
+
+  ${!elig.pass?`<div style="padding:10px 14px;background:var(--warn-l);border-radius:8px;border:1px solid var(--warn-b);margin-bottom:14px;font-size:11.5px;color:var(--warn)">
+    ${elig.checks.filter(c=>!c.pass).map(c=>c.reason).join(' · ')}. You cannot apply until these criteria are met.
+  </div>`:''}
+
+  <div style="display:flex;gap:11px">
+    <!-- Job board -->
+    <div style="flex:2">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+        <div style="font-size:13px;font-weight:700;color:var(--navy)">Internal job postings <span style="font-size:12px;font-weight:400;color:var(--ink3)">(${openJobs.length} open)</span></div>
+      </div>
+      ${openJobs.length===0?`<div class="card" style="text-align:center;padding:36px;color:var(--ink3)">No internal openings at the moment.</div>`
+      :openJobs.map(job=>{
+        const applied=appliedJobIds.has(job.id);
+        const app=myApps.find(a=>a.jobId===job.id);
+        return`<div class="card" style="margin-bottom:11px;border:1px solid ${applied?'var(--ok-b)':'var(--border)'}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:3px">${job.title}</div>
+              <div style="font-size:11px;color:var(--ink3);margin-bottom:8px">${job.location} · ${job.hub} · ${job.province} · ${job.empStatus}</div>
+              <div style="font-size:11.5px;color:var(--ink2);line-height:1.6;margin-bottom:9px">${job.description}</div>
+              <div style="font-size:10.5px;color:var(--ink3);padding:7px 10px;background:var(--navy-ll);border-radius:6px;border:1px solid var(--border)">
+                <strong>Requirements:</strong> ${job.requirements}
+              </div>
+              <div style="font-size:10px;color:var(--ink3);margin-top:7px">Posted ${job.postedAt} · Ref: ${job.ticketId}</div>
+            </div>
+            <div style="flex-shrink:0;min-width:110px;text-align:right">
+              ${applied?`
+              <div style="margin-bottom:7px">${imStageBadge(app.stage)}</div>
+              <button class="btn sm" onclick="empViewAppId='${app.id}';nav('emp-status')">View application →</button>
+              `:`
+              ${elig.pass
+                ?`<button class="btn p" onclick="empStartApply('${job.id}')">Apply now →</button>`
+                :`<button class="btn ghost" disabled style="opacity:.4;cursor:not-allowed">Ineligible</button>`}
+              `}
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Right panel -->
+    <div style="flex:1">
+      <!-- My applications -->
+      <div class="card" style="margin-bottom:11px">
+        <div class="hdr"></div>
+        <div class="ct">My applications <span style="font-size:10px;color:var(--ink3)">(${myApps.length})</span></div>
+        ${myApps.length===0?`<div style="text-align:center;padding:18px;color:var(--ink3);font-size:11.5px">No applications yet.</div>`
+        :myApps.map(a=>`<div style="padding:9px 0;border-bottom:1px solid var(--border-l);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--navy)">${a.jobTitle}</div>
+            <div style="font-size:10.5px;color:var(--ink3)">${a.jobCity} · ${a.submittedAt}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            ${imStageBadge(a.stage)}
+            <button class="btn sm" onclick="empViewAppId='${a.id}';nav('emp-status')" style="font-size:10px">View →</button>
+          </div>
+        </div>`).join('')}
+      </div>
+
+      <!-- Eligibility box -->
+      <div class="card">
+        <div class="hdr"></div>
+        <div class="ct">My eligibility</div>
+        ${imCheckEligibility(emp).checks.map(c=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border-l)">
+          <div>
+            <div style="font-size:11.5px;font-weight:500">${c.label}</div>
+            <div style="font-size:10px;color:var(--ink3)">${c.value} · min ${c.min}</div>
+          </div>
+          ${c.pass?`<span class="b ba" style="font-size:10px">Pass</span>`:`<span class="b br" style="font-size:10px">Fail</span>`}
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ── Start application for a specific job ── */
+function empStartApply(jobId){
+  empApplyJobId=jobId;
+  empApplyStep=1;
+  empAppData={jobId};
+  nav('emp-apply');
+}
+
+/* ── Application webform ── */
+function pgEmpApply(){
+  const emp=meEmp();
+  if(!emp) return`<div class="ptitle">Apply</div>`;
+  const job=IM_JOB_POSTS.find(j=>j.id===empApplyJobId);
+  if(!job) return`<div class="ptitle">Apply</div><div class="psub">Select a job post to apply.</div>
+    <button class="btn p" onclick="nav('emp-home')">← Back to job board</button>`;
+
+  const elig=imCheckEligibility(emp);
+  const step=empApplyStep;
+
+  return`
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn ghost" onclick="empApplyStep=1;empAppData={};empApplyJobId=null;imJobsTab='openings';render()">← Job openings</button>
+    <div class="ptitle" style="margin-bottom:0">Apply — ${job.title}</div>
+    <span style="font-size:10.5px;color:var(--ink3)">${job.location} · ${job.hub}</span>
+  </div>
+
+  <!-- Step bar -->
+  <div style="display:flex;gap:0;margin-bottom:20px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+    ${[['1','Eligibility'],['2','Your details'],['3','Motivation'],['4','Review & submit']].map(([n,lbl],i)=>`
+    <div style="flex:1;padding:9px 12px;background:${step===i+1?'var(--navy)':step>i+1?'var(--ok-l)':'#fff'};
+      border-right:${i<3?'1px solid var(--border)':'none'}">
+      <div style="font-size:8.5px;font-weight:600;color:${step===i+1?'rgba(255,255,255,.55)':step>i+1?'var(--ok)':'var(--ink3)'};text-transform:uppercase;letter-spacing:.05em">Step ${n}</div>
+      <div style="font-size:11px;font-weight:600;color:${step===i+1?'#fff':step>i+1?'var(--ok)':'var(--ink2)'};margin-top:1px">${lbl}</div>
+    </div>`).join('')}
+  </div>
+
+  <!-- Job summary always visible at top -->
+  <div style="padding:11px 14px;background:var(--navy-ll);border-radius:8px;border:1px solid var(--border);margin-bottom:14px;display:flex;gap:14px">
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700;color:var(--navy)">${job.title}</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">${job.location} · ${job.hub} · ${job.province}</div>
+    </div>
+    <div style="font-size:10.5px;color:var(--ink3);text-align:right">Ref: ${job.ticketId}<br>${job.empStatus}</div>
+  </div>
+
+  <!-- ── STEP 1: Eligibility ── -->
+  ${step===1?`<div style="max-width:640px">
+    ${imEligibilityTable(elig,emp)}
+    ${elig.pass
+      ?`<div class="sbox" style="margin-bottom:12px">You meet all eligibility criteria for this position.</div>
+        <button class="btn p" onclick="empApplyStep=2;render()">Continue to application →</button>`
+      :`<div class="rbox">You do not meet the eligibility criteria and cannot apply for this position at this time.</div>
+        <button class="btn ghost" onclick="nav('emp-home')">← Back to job board</button>`}
+  </div>`:''}
+
+  <!-- ── STEP 2: Your details (pre-filled, read-only) ── -->
+  ${step===2?`<div style="max-width:640px">
+    <div class="card" style="margin-bottom:11px">
+      <div class="hdr"></div>
+      <div class="ct">Your current information <span style="font-size:10px;color:var(--ink3);font-weight:400">Pre-filled — contact HR to update</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+        ${[['Full name',emp.name],['Employee ID',emp.id],
+           ['Current role',emp.role],['Current hub',emp.hub],
+           ['Current city',emp.city],['Reporting Manager',emp.reportingMgr],
+           ['Tenure',emp.tenure+' months'],['Performance grade','Grade '+emp.performanceGrade],
+        ].map(([l,v])=>`<div style="padding:7px 10px;background:var(--navy-ll);border-radius:6px;border:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">${l}</div>
+          <div style="font-size:11.5px;font-weight:500;color:var(--navy)">${v}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div class="ibox" style="margin-bottom:12px">
+      Your Reporting Manager <strong>${emp.reportingMgr}</strong> will be the first approver for this application.
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn ghost" onclick="empApplyStep=1;render()">← Back</button>
+      <button class="btn p" onclick="empApplyStep=3;render()">Continue →</button>
+    </div>
+  </div>`:''}
+
+  <!-- ── STEP 3: Motivation ── -->
+  ${step===3?`<div style="max-width:600px">
+    <div class="card" style="margin-bottom:11px">
+      <div class="hdr"></div>
+      <div class="ct">Motivation & statement</div>
+
+      <div class="fsec">
+        <label>Why are you interested in this position? <span style="color:var(--err)">*</span></label>
+        <textarea id="app-reason" rows="5"
+          placeholder="Ceritakan alasan Anda tertarik dengan posisi ini dan bagaimana ini sesuai dengan tujuan karir Anda…"
+          oninput="empAppData.reason=this.value">${empAppData.reason||''}</textarea>
+        <div style="font-size:10.5px;color:var(--ink3);margin-top:4px">Your Reporting Manager and HRBP will read this statement.</div>
+      </div>
+
+      <div class="fsec">
+        <label>What relevant experience do you bring to this role?</label>
+        <textarea id="app-experience" rows="3"
+          placeholder="Pengalaman, pencapaian, atau keahlian yang relevan dengan posisi ini…"
+          oninput="empAppData.experience=this.value">${empAppData.experience||''}</textarea>
+      </div>
+
+      <div class="fsec">
+        <label>Expected transition date <span style="color:var(--err)">*</span></label>
+        <input type="date" id="app-date" value="${empAppData.expectedDate||''}"
+          oninput="empAppData.expectedDate=this.value"
+          style="max-width:200px"/>
+        <div style="font-size:10.5px;color:var(--ink3);margin-top:3px">Earliest date you can start in the new role.</div>
+      </div>
+
+      <div style="padding:10px 13px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--border);font-size:11px;color:var(--ink2)">
+        Submission of this form does not guarantee the position. Your application will go through:
+        <strong>Reporting Manager → City Lead → Province Lead → HRBP → Region Head</strong>
+        ${job.province!==emp.province?'(+ HoD if relocation benefit applies)':''}.
+      </div>
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn ghost" onclick="empApplyStep=2;render()">← Back</button>
+      <button class="btn p" onclick="empApplyStep=4;render()"
+        ${!empAppData.reason||!empAppData.expectedDate?'style="opacity:.45;cursor:not-allowed"':''}>
+        Review application →
+      </button>
+    </div>
+  </div>`:''}
+
+  <!-- ── STEP 4: Review & submit ── -->
+  ${step===4?`<div style="max-width:640px">
+    <div class="card" style="margin-bottom:11px">
+      <div class="hdr"></div>
+      <div class="ct">Review your application</div>
+
+      <!-- Summary grid -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">
+        ${[['Applying for',job.title],['Location',job.location+' · '+job.hub],
+           ['Your name',emp.name],['Employee ID',emp.id],
+           ['Current role',emp.role+' / '+emp.city],
+           ['Reporting Manager',emp.reportingMgr],
+           ['Expected start',empAppData.expectedDate||'—'],
+           ['Ticket ref',job.ticketId],
+        ].map(([l,v])=>`<div style="padding:7px 10px;background:var(--navy-ll);border-radius:6px;border:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">${l}</div>
+          <div style="font-size:11.5px;font-weight:500;color:var(--navy)">${v}</div>
+        </div>`).join('')}
+      </div>
+
+      <!-- Motivation statement -->
+      <div style="padding:11px 13px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--border);margin-bottom:11px">
+        <div style="font-size:9.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Your motivation statement</div>
+        <div style="font-size:11.5px;color:var(--ink2);line-height:1.6">${empAppData.reason}</div>
+        ${empAppData.experience?`<div style="font-size:11.5px;color:var(--ink2);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-l)">${empAppData.experience}</div>`:''}
+      </div>
+
+      <!-- Approval path -->
+      <div style="margin-bottom:13px">
+        <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px">Approval path after submission</div>
+        <div style="display:flex;align-items:flex-start;gap:0;position:relative">
+          <div style="position:absolute;top:14px;left:14px;right:14px;height:2px;background:var(--border-l);z-index:0"></div>
+          ${['RM','City Lead','Province Lead','HRBP','Region Head'].map((s,i,arr)=>`
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;z-index:1">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--navy-ll);border:2px solid var(--border);
+              display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--ink3)">${i+1}</div>
+            <div style="font-size:9px;text-align:center;color:var(--ink3);max-width:52px;line-height:1.3">${s}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+
+      <div style="padding:10px 13px;background:var(--warn-l);border-radius:7px;border:1px solid var(--warn-b);font-size:11px;color:var(--warn);margin-bottom:13px">
+        By submitting, you confirm all information is accurate and you understand this application will be reviewed by your manager and HR team.
+      </div>
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn ghost" onclick="empApplyStep=3;render()">← Back</button>
+      <button class="btn p" style="background:var(--navy);border-color:var(--navy)" onclick="empSubmitApplication()">
+        Submit application
+      </button>
+    </div>
+  </div>`:''}`;
+}
+
+/* ── Submit application ── */
+function empSubmitApplication(){
+  const emp=meEmp();if(!emp)return;
+  const job=IM_JOB_POSTS.find(j=>j.id===empApplyJobId);if(!job)return;
+  if(!empAppData.reason||!empAppData.expectedDate){alert('Please fill all required fields.');return;}
+  const elig=imCheckEligibility(emp);if(!elig.pass){alert('You are not eligible.');return;}
+  const now=ts();
+  const appId='IMAPP-'+String(IM_APPLICATIONS.length+1).padStart(3,'0');
+  const newApp={
+    id:appId,jobId:job.id,empId:emp.id,empName:emp.name,
+    jobTitle:job.title,jobHub:job.hub,jobCity:job.location,
+    currentRole:emp.role,currentHub:emp.hub,currentCity:emp.city,
+    submittedAt:now,expectedDate:empAppData.expectedDate,
+    reason:empAppData.reason,experience:empAppData.experience||'',
+    approvals:{
+      rm:{status:'Pending',by:null,at:null,remark:null},
+      cityLead:{status:'Waiting',by:null,at:null,remark:null},
+      provinceLead:{status:'Waiting',by:null,at:null,remark:null},
+      hrbp:{status:'Waiting',by:null,at:null,remark:null},
+      regionHead:{status:'Waiting',by:null,at:null,remark:null},
+    },
+    stage:'RM Approval',
+    history:[
+      {ts:now,actor:emp.name,event:'Application submitted — '+job.title+' at '+job.location},
+      {ts:now,actor:'System',event:'Eligibility check passed — tenure '+emp.tenure+' months, grade '+emp.performanceGrade},
+      {ts:now,actor:'System',event:'RM '+emp.reportingMgr+' notified for approval'},
+    ],
+  };
+  IM_APPLICATIONS.push(newApp);
+  // Also add to job post applicants
+  job.applicants.push({empId:emp.id,empName:emp.name,status:'RM Approval',submittedAt:now,reason:empAppData.reason});
+  // Also create IM_CASE for HRBP/admin view
+  IM_CASES.push({
+    id:appId.replace('IMAPP','REL'),type:'Self-Nomination',empId:emp.id,empName:emp.name,
+    currentHub:emp.hub,currentCity:emp.city,targetHub:job.hub,targetCity:job.location,
+    targetRole:job.title,submittedAt:now,nominatedBy:emp.name,
+    stage:'RM Approval',
+    eligibility:{tenure:{pass:emp.tenure>=12,value:emp.tenure,min:12},performance:{pass:['A','B'].includes(emp.performanceGrade),value:emp.performanceGrade,min:'B'}},
+    approvals:{rm:{status:'Pending'},cityLead:{status:'Waiting'},provinceLead:{status:'Waiting'},hrbp:{status:'Waiting'},regionHead:{status:'Waiting'},hod:{status:'Waiting'}},
+    benefit:null,effectiveDate:null,
+    history:[{ts:now,actor:emp.name,event:'Employee submitted via Internal Job Board — '+job.title},{ts:now,actor:'System',event:'Eligibility passed, RM approval pending'}],
+  });
+  empApplyStep=1;empAppData={};empApplyJobId=null;
+  empViewAppId=appId;
+  imJobsTab='myapp';
+  render();
+}
+
+/* ── Application status page ── */
+function pgEmpStatus(){
+  const emp=meEmp();
+  if(!emp) return`<div class="ptitle">My Application</div>`;
+  const app=empViewAppId?IM_APPLICATIONS.find(a=>a.id===empViewAppId):IM_APPLICATIONS.filter(a=>a.empId===emp.id).slice(-1)[0];
+
+  if(!app) return`
+  <button class="btn ghost" onclick="nav('emp-home')" style="margin-bottom:14px">← Back to job board</button>
+  <div class="ptitle">My Application</div>
+  <div style="text-align:center;padding:48px;color:var(--ink3)">
+    <div style="font-size:15px;font-weight:600;margin-bottom:8px">No active application</div>
+    <div style="font-size:12px;margin-bottom:16px">Browse open positions to apply.</div>
+    <button class="btn p" onclick="nav('emp-home')">View job board →</button>
+  </div>`;
+
+  const STEP_ORDER=['RM Approval','City Lead Approval','Province Lead Approval','HRBP Check','Region Head Approval','Approved','Completed'];
+  const stepLabels={'RM Approval':'RM','City Lead Approval':'City Lead','Province Lead Approval':'Province Lead','HRBP Check':'HRBP','Region Head Approval':'Region Head','Approved':'Done','Completed':'Done'};
+  const curIdx=Math.max(0,STEP_ORDER.indexOf(app.stage));
+  const job=IM_JOB_POSTS.find(j=>j.id===app.jobId);
+
+  // RM can approve inline (admin simulates)
+  const canActAsRM=currentRole==='admin';
+
+  return`
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+    <button class="btn ghost" onclick="empViewAppId=null;nav('emp-home')">← Job board</button>
+    <div class="ptitle" style="margin-bottom:0">Application — ${app.jobTitle}</div>
+    ${imStageBadge(app.stage)}
+  </div>
+
+  <!-- Progress tracker -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="hdr"></div>
+    <div class="ct">Application progress</div>
+    <div style="position:relative;padding:6px 0 12px">
+      <div style="position:absolute;top:20px;left:24px;right:24px;height:2px;background:var(--border-l)"></div>
+      <div style="position:absolute;top:20px;left:24px;height:2px;background:var(--navy);
+        width:calc(${Math.max(0,curIdx/(STEP_ORDER.length-2)*100)}% - ${curIdx===0?'0px':'8px'});transition:width .4s"></div>
+      <div style="display:flex;position:relative">
+        ${STEP_ORDER.filter(s=>s!=='Completed').map((stage,i)=>{
+          const isDone=i<curIdx;const isCur=i===curIdx;
+          const lbl=stepLabels[stage]||stage;
+          return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">
+            <div style="width:36px;height:36px;border-radius:50%;
+              background:${isDone?'var(--ok)':isCur?'var(--navy)':'#fff'};
+              border:2px solid ${isDone?'var(--ok)':isCur?'var(--navy)':'var(--border)'};
+              display:flex;align-items:center;justify-content:center;
+              font-size:${isDone?'14':'11'}px;font-weight:700;
+              color:${isDone||isCur?'#fff':'var(--ink3)'}">
+              ${isDone?'✓':isCur?'●':(i+1)}
+            </div>
+            <div style="font-size:9px;text-align:center;color:${isDone?'var(--ok)':isCur?'var(--navy)':'var(--ink3)'};font-weight:${isCur?'700':'400'};line-height:1.3;max-width:58px">
+              ${lbl}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+    ${app.stage==='Approved'||app.stage==='Completed'?`
+    <div style="padding:10px 13px;background:var(--ok-l);border-radius:7px;border:1px solid var(--ok-b);font-size:12px;font-weight:600;color:var(--ok);margin-top:4px">
+      Congratulations! Your application has been approved. HR will contact you regarding the next steps.
+    </div>`:
+    app.stage==='Rejected'?`
+    <div style="padding:10px 13px;background:var(--err-l);border-radius:7px;border:1px solid var(--err-b);font-size:12px;color:var(--err);margin-top:4px">
+      Your application was not approved. Please speak with your HRBP for more information.
+    </div>`:''}
+  </div>
+
+  <!-- What's happening now -->
+  ${!['Approved','Completed','Rejected'].includes(app.stage)?`
+  <div style="padding:11px 14px;background:var(--inf-l);border-radius:8px;border:1px solid var(--inf-b);margin-bottom:14px;font-size:11.5px;color:var(--inf)">
+    <strong>Your application is with:</strong> ${app.stage} ·
+    ${app.stage==='RM Approval'?`Waiting for ${emp.reportingMgr} to review your application. Expected 2–3 business days.`:''}
+    ${app.stage==='City Lead Approval'?'The City Lead is reviewing your request.':''}
+    ${app.stage==='Province Lead Approval'?'The Province Lead is reviewing your request.':''}
+    ${app.stage==='HRBP Check'?'HRBP is validating UMK alignment and relocation benefit eligibility.':''}
+    ${app.stage==='Region Head Approval'?'The Region Head is completing the final approval.':''}
+    You will be notified when this changes.
+  </div>`:''}
+
+  <!-- RM inline approval panel (admin simulates RM) -->
+  ${app.stage==='RM Approval'&&canActAsRM?`
+  <div class="card" style="margin-bottom:11px;border:1px solid var(--warn-b)">
+    <div class="hdr"></div>
+    <div class="ct" style="color:var(--warn)">Simulate: Reporting Manager Approval</div>
+    <div style="font-size:11.5px;color:var(--ink2);margin-bottom:11px">
+      RM <strong>${emp.reportingMgr}</strong> received this application for review. The application and motivation statement are shown below.
+    </div>
+    <div style="padding:10px 13px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--border);margin-bottom:11px;font-size:11.5px;color:var(--ink2)">
+      "${app.reason}"
+    </div>
+    <div><label>RM remarks (optional)</label>
+      <input id="rm-remark-${app.id}" placeholder="Any comments for the applicant or next approvers…"/></div>
+    <div style="display:flex;gap:7px;margin-top:9px">
+      <button class="btn p" onclick="empApproveApp('${app.id}','rm','Approved')">Approve →</button>
+      <button class="btn danger" onclick="empApproveApp('${app.id}','rm','Rejected')">Reject</button>
+    </div>
+  </div>`:''}
+
+  <!-- Application details -->
+  <div class="card" style="margin-bottom:11px">
+    <div class="hdr"></div>
+    <div class="ct">Application details</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px">
+      ${[['Application ID',app.id],['Job title',app.jobTitle],
+         ['Location',app.jobCity+' · '+app.jobHub],['Submitted',app.submittedAt],
+         ['Expected start',app.expectedDate||'—'],['Your current role',app.currentRole+' / '+app.currentCity],
+      ].map(([l,v])=>`<div style="padding:7px 10px;background:var(--navy-ll);border-radius:6px;border:1px solid var(--border)">
+        <div style="font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px">${l}</div>
+        <div style="font-size:11.5px;font-weight:500;color:var(--navy)">${v}</div>
+      </div>`).join('')}
+    </div>
+    <div style="padding:10px 12px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--border)">
+      <div style="font-size:9.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Your statement</div>
+      <div style="font-size:11.5px;color:var(--ink2);line-height:1.6">${app.reason}</div>
+      ${app.experience?`<div style="font-size:11.5px;color:var(--ink2);line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px solid var(--border-l)">${app.experience}</div>`:''}
+    </div>
+  </div>
+
+  <!-- Activity log -->
+  <div class="card">
+    <div class="hdr"></div>
+    <div class="ct">Activity log</div>
+    ${app.history.map((h,i)=>`
+    <div style="display:flex;gap:10px;padding:8px 0;border-bottom:${i<app.history.length-1?'1px solid var(--border-l)':'none'}">
+      <div style="min-width:9px;margin-top:6px"><div style="width:9px;height:9px;border-radius:50%;background:var(--navy)"></div></div>
+      <div>
+        <div style="font-size:11.5px;font-weight:500;color:var(--ink)">${h.event}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:1px">${h.ts}</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+/* ── Approve application (simulated by admin as RM) ── */
+function empApproveApp(appId,layer,decision){
+  const app=IM_APPLICATIONS.find(a=>a.id===appId);if(!app)return;
+  const remark=document.getElementById('rm-remark-'+appId)?.value||'';
+  const now=ts();
+  app.approvals[layer]={status:decision,by:me().name+' (simulated RM)',at:now,remark};
+  app.history.push({ts:now,actor:me().name,event:`Reporting Manager ${decision}`+(remark?` — "${remark}"`:'')});
+  const nextStage={rm:'City Lead Approval',cityLead:'Province Lead Approval',provinceLead:'HRBP Check',hrbp:'Region Head Approval',regionHead:'Approved'};
+  app.stage=decision==='Approved'?(nextStage[layer]||'Approved'):'Rejected';
+  // Sync to IM_CASES
+  const cas=IM_CASES.find(c=>c.id===appId.replace('IMAPP','REL'));
+  if(cas){cas.stage=app.stage;cas.approvals[layer]={status:decision,by:me().name,at:now,remark};}
+  imJobsTab='myapp';render();
+}
+
+
+/* ── Internal Job Openings page — unified tab for all roles ── */
+let imJobsTab='openings';  // 'openings' | 'myapp' | 'manage'
+let imJobsView=null;       // job post being previewed
+
+function pgIMJobs(){
+  const emp=meEmp();
+  const canManage=!isEmployee()&&(currentRole==='hrbp'||currentRole==='admin');
+  const tab=imJobsTab;
+  const openJobs=IM_JOB_POSTS.filter(j=>j.active);
+  const myApps=emp?IM_APPLICATIONS.filter(a=>a.empId===emp.id):[];
+  const appliedJobIds=new Set(myApps.map(a=>a.jobId));
+
+  // If employee is in the middle of applying, render the form inline
+  if(emp&&empApplyJobId){
+    return pgEmpApply();
+  }
+
+  // Tab definitions vary by role
+  const tabs=[
+    {id:'openings',label:'Job Openings',count:openJobs.length,show:true},
+    ...(emp?[{id:'myapp',label:'My Application',count:myApps.length,show:true}]:[]),
+    ...(canManage?[{id:'manage',label:'Manage Postings',count:IM_JOB_POSTS.length,show:true}]:[]),
+  ];
+
+  return`
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div class="ptitle">Internal Job Openings</div>
+    ${canManage?`<button class="btn p" onclick="imPublishJobPost()">+ Publish job post</button>`:''}
+  </div>
+  <div class="psub">${emp?`Viewing as ${emp.name} · ${emp.role} · ${emp.city}`:'Internal hiring openings and employee applications'}</div>
+
+  <!-- Tab bar -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px">
+    ${tabs.filter(t=>t.show).map(t=>`
+    <div onclick="imJobsTab='${t.id}';imJobsView=null;render()"
+      style="padding:8px 16px;font-size:12px;font-weight:${tab===t.id?'600':'400'};
+      color:${tab===t.id?'var(--navy)':'var(--ink3)'};
+      border-bottom:2px solid ${tab===t.id?'var(--navy)':'transparent'};
+      margin-bottom:-1px;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px">
+      ${t.label}
+      <span style="font-size:10px;padding:1px 7px;border-radius:10px;
+        background:${tab===t.id?'var(--navy)':'var(--border-l)'};
+        color:${tab===t.id?'#fff':'var(--ink3)'}">${t.count}</span>
+    </div>`).join('')}
+  </div>
+
+  <!-- ── JOB OPENINGS TAB ── -->
+  ${tab==='openings'?`
+  ${emp&&!imCheckEligibility(emp).pass?`
+  <div style="padding:10px 14px;background:var(--warn-l);border-radius:8px;border:1px solid var(--warn-b);margin-bottom:14px;font-size:11.5px;color:var(--warn)">
+    ${imCheckEligibility(emp).checks.filter(c=>!c.pass).map(c=>c.reason).join(' · ')}. You cannot apply until these criteria are met.
+  </div>`:''}
+
+  ${openJobs.length===0
+    ?`<div class="card" style="text-align:center;padding:48px;color:var(--ink3)">No internal job openings at the moment.</div>`
+    :openJobs.map(job=>{
+      const applied=appliedJobIds.has(job.id);
+      const app=myApps.find(a=>a.jobId===job.id);
+      const empElig=emp?imCheckEligibility(emp):null;
+      const isPreview=imJobsView===job.id;
+      return`<div class="card" style="margin-bottom:11px;border:1px solid ${applied?'var(--ok-b)':'var(--border)'}">
+        <div style="display:flex;align-items:flex-start;gap:14px">
+          <!-- Job icon -->
+          <div style="width:42px;height:42px;border-radius:8px;background:var(--navy-l);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><rect x="1" y="5" width="14" height="9" rx="1.5" stroke="var(--navy)" stroke-width="1.3"/><path d="M5 5V4a3 3 0 016 0v1" stroke="var(--navy)" stroke-width="1.3"/></svg>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+              <div>
+                <div style="font-size:14px;font-weight:700;color:var(--navy)">${job.title}</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:2px">${job.location} · ${job.hub} · ${job.province}</div>
+                <div style="display:flex;gap:5px;margin-top:6px;flex-wrap:wrap">
+                  <span class="tag">${job.empStatus}</span>
+                  <span class="tag" style="background:var(--inf-l);color:var(--inf)">${job.applicants.length} applicant${job.applicants.length!==1?'s':''}</span>
+                  <span style="font-size:10px;color:var(--ink3);align-self:center">Posted ${job.postedAt}</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+                ${applied?`
+                  <div>${imStageBadge(app.stage)}</div>
+                  <button class="btn sm" onclick="imJobsTab='myapp';empViewAppId='${app.id}';render()">View my application →</button>
+                `:emp?`
+                  ${empElig?.pass
+                    ?`<button class="btn sm p" onclick="empStartApply('${job.id}')">Apply →</button>`
+                    :`<span style="font-size:10.5px;color:var(--border)">Ineligible</span>`}
+                  <button class="btn sm ghost" onclick="imJobsView='${isPreview?'null':job.id}';render()" style="font-size:10.5px">${isPreview?'Hide details':'View details'}</button>
+                `:`
+                  <button class="btn sm ghost" onclick="imJobsView='${isPreview?'null':job.id}';render()">${isPreview?'Hide details':'View details'}</button>
+                `}
+              </div>
+            </div>
+
+            <!-- Expandable detail -->
+            ${isPreview||applied?`
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border-l)">
+              <div style="font-size:11.5px;color:var(--ink2);line-height:1.7;margin-bottom:9px">${job.description}</div>
+              <div style="padding:8px 11px;background:var(--navy-ll);border-radius:6px;border:1px solid var(--border);font-size:11px;color:var(--ink2)">
+                <strong>Requirements:</strong> ${job.requirements}
+              </div>
+              ${emp&&!applied&&empElig?.pass?`
+              <div style="margin-top:11px">
+                <button class="btn p" onclick="empStartApply('${job.id}')">Apply for this position →</button>
+              </div>`:''}
+            </div>`:''}
+          </div>
+        </div>
+      </div>`;}).join('')}
+  `:''}
+
+  <!-- ── MY APPLICATION TAB (employee only) ── -->
+  ${tab==='myapp'&&emp?`
+  ${myApps.length===0?`
+  <div style="text-align:center;padding:48px;color:var(--ink3)">
+    <div style="font-size:13px;font-weight:600;margin-bottom:8px">No active application</div>
+    <div style="font-size:12px;margin-bottom:16px">Browse the Job Openings tab to apply.</div>
+    <button class="btn p" onclick="imJobsTab='openings';render()">Browse openings →</button>
+  </div>
+  `:myApps.map(a=>`${pgEmpStatusInline(a,emp)}`).join('')}
+  `:''}
+
+  <!-- ── MANAGE POSTINGS TAB (HRBP/admin) ── -->
+  ${tab==='manage'&&canManage?`
+  <div class="card" style="padding:0;overflow:hidden">
+    <table>
+      <tr style="background:var(--navy-ll)">
+        <th>Job ID</th><th>Title</th><th>Location</th><th>Ticket ref</th><th>Posted</th><th>Status</th><th>Applicants</th><th>Actions</th>
+      </tr>
+      ${IM_JOB_POSTS.map(job=>`<tr>
+        <td><span class="mono">${job.id}</span></td>
+        <td style="font-weight:500">${job.title}</td>
+        <td style="font-size:10.5px">${job.location} · ${job.hub}</td>
+        <td><span class="mono" style="font-size:10.5px;cursor:pointer;color:var(--spx)" onclick="viewTicket('${job.ticketId}')">${job.ticketId}</span></td>
+        <td style="font-size:10.5px;color:var(--ink3)">${job.postedAt}</td>
+        <td><span class="b ${job.active?'ba':'bp'}">${job.active?'Active':'Closed'}</span></td>
+        <td style="text-align:center;font-weight:600">${job.applicants.length}</td>
+        <td>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <button class="btn sm" onclick="imJobsTab='openings';imJobsView='${job.id}';render()">View</button>
+            ${job.applicants.length?`<button class="btn sm blue" onclick="imShowApplicants('${job.id}')">Applicants</button>`:''}
+            <button class="btn sm ${job.active?'danger':'grn'}" onclick="imToggleJobPost('${job.id}')">${job.active?'Close':'Reopen'}</button>
+          </div>
+        </td>
+      </tr>`).join('')}
+    </table>
+  </div>
+
+  <!-- Applicant list for selected job -->
+  ${(()=>{
+    const selected=IM_JOB_POSTS.find(j=>j._showApplicants);
+    if(!selected||!selected.applicants.length) return '';
+    return`<div class="card" style="margin-top:11px;border:1px solid var(--inf-b)">
+      <div class="hdr"></div>
+      <div class="ct" style="color:var(--inf)">Applicants — ${selected.title}
+        <button class="btn sm ghost" onclick="delete IM_JOB_POSTS.find(j=>j.id==='${selected.id}')._showApplicants;render()">Close</button>
+      </div>
+      <table>
+        <tr style="background:var(--navy-ll)"><th>Employee</th><th>Current role</th><th>Stage</th><th>Submitted</th><th>Statement</th></tr>
+        ${selected.applicants.map(a=>`<tr>
+          <td style="font-weight:500">${a.empName}</td>
+          <td style="font-size:10.5px">${IM_EMPLOYEES.find(e=>e.id===a.empId)?.role||'—'} / ${IM_EMPLOYEES.find(e=>e.id===a.empId)?.city||'—'}</td>
+          <td>${imStageBadge(a.status)}</td>
+          <td style="font-size:10.5px;color:var(--ink3)">${a.submittedAt}</td>
+          <td style="font-size:10.5px;color:var(--ink2);max-width:260px">${(a.reason||'').slice(0,100)}${a.reason?.length>100?'…':''}</td>
+        </tr>`).join('')}
+      </table>
+    </div>`;
+  })()}
+  `:''}`;
+}
+
+/* ── Inline application status (used in My Application tab) ── */
+function pgEmpStatusInline(app,emp){
+  const STEP_ORDER=['RM Approval','City Lead Approval','Province Lead Approval','HRBP Check','Region Head Approval','Approved','Completed'];
+  const curIdx=Math.max(0,STEP_ORDER.indexOf(app.stage));
+  const canActAsRM=currentRole==='admin';
+
+  return`
+  <div class="card" style="margin-bottom:11px;border:1px solid ${app.stage==='Approved'||app.stage==='Completed'?'var(--ok-b)':app.stage==='Rejected'?'var(--err-b)':'var(--border)'}">
+    <div class="hdr"></div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--navy)">${app.jobTitle}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">${app.jobCity} · ${app.jobHub} · submitted ${app.submittedAt}</div>
+      </div>
+      ${imStageBadge(app.stage)}
+    </div>
+
+    <!-- Progress tracker -->
+    <div style="position:relative;padding:4px 0 14px;margin-bottom:12px">
+      <div style="position:absolute;top:18px;left:18px;right:18px;height:2px;background:var(--border-l)"></div>
+      <div style="position:absolute;top:18px;left:18px;height:2px;background:var(--navy);
+        width:calc(${Math.max(0,curIdx/(STEP_ORDER.length-2)*100)}%);transition:width .4s"></div>
+      <div style="display:flex;position:relative">
+        ${STEP_ORDER.filter(s=>s!=='Completed').map((stage,i)=>{
+          const isDone=i<curIdx,isCur=i===curIdx;
+          const short={'RM Approval':'RM','City Lead Approval':'City','Province Lead Approval':'Province','HRBP Check':'HRBP','Region Head Approval':'Region Head','Approved':'Done'}[stage]||stage;
+          return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="width:32px;height:32px;border-radius:50%;
+              background:${isDone?'var(--ok)':isCur?'var(--navy)':'#fff'};
+              border:2px solid ${isDone?'var(--ok)':isCur?'var(--navy)':'var(--border)'};
+              display:flex;align-items:center;justify-content:center;
+              font-size:${isDone?'13':'10'}px;font-weight:700;
+              color:${isDone||isCur?'#fff':'var(--ink3)'}">
+              ${isDone?'✓':isCur?'●':(i+1)}
+            </div>
+            <div style="font-size:8.5px;text-align:center;color:${isDone?'var(--ok)':isCur?'var(--navy)':'var(--ink3)'};font-weight:${isCur?'700':'400'};line-height:1.2;max-width:50px">${short}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <!-- Status message -->
+    ${!['Approved','Completed','Rejected'].includes(app.stage)?`
+    <div style="padding:9px 12px;background:var(--inf-l);border-radius:7px;border:1px solid var(--inf-b);font-size:11.5px;color:var(--inf);margin-bottom:11px">
+      Currently with: <strong>${app.stage}</strong> ·
+      ${app.stage==='RM Approval'?`Waiting for ${emp.reportingMgr} to review.`:''}
+      ${app.stage==='City Lead Approval'?'City Lead is reviewing.':''}
+      ${app.stage==='Province Lead Approval'?'Province Lead is reviewing.':''}
+      ${app.stage==='HRBP Check'?'HRBP validating UMK & benefit eligibility.':''}
+      ${app.stage==='Region Head Approval'?'Region Head completing final review.':''}
+    </div>`:''}
+    ${app.stage==='Approved'||app.stage==='Completed'?`
+    <div style="padding:9px 12px;background:var(--ok-l);border-radius:7px;border:1px solid var(--ok-b);font-size:12px;font-weight:600;color:var(--ok);margin-bottom:11px">
+      Congratulations! Your application has been approved. HR will contact you regarding next steps.
+    </div>`:''}
+    ${app.stage==='Rejected'?`
+    <div style="padding:9px 12px;background:var(--err-l);border-radius:7px;border:1px solid var(--err-b);font-size:12px;color:var(--err);margin-bottom:11px">
+      Your application was not approved. Please speak with your HRBP.
+    </div>`:''}
+
+    <!-- RM approval simulation -->
+    ${app.stage==='RM Approval'&&canActAsRM?`
+    <div style="padding:11px 13px;background:var(--warn-l);border-radius:7px;border:1px solid var(--warn-b);margin-bottom:11px">
+      <div style="font-size:10.5px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px">Simulate Reporting Manager action</div>
+      <div style="font-size:11.5px;color:var(--ink2);margin-bottom:9px;padding:8px 10px;background:#fff;border-radius:6px;font-style:italic">"${app.reason}"</div>
+      <div style="margin-bottom:8px"><label>RM remarks (optional)</label>
+        <input id="rm-remark-${app.id}" placeholder="Comments for next approvers…"/></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn p" onclick="empApproveApp('${app.id}','rm','Approved')">Approve →</button>
+        <button class="btn danger" onclick="empApproveApp('${app.id}','rm','Rejected')">Reject</button>
+      </div>
+    </div>`:''}
+
+    <!-- Motivation statement -->
+    <div style="padding:9px 11px;background:var(--navy-ll);border-radius:7px;border:1px solid var(--border);margin-bottom:11px">
+      <div style="font-size:9.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Your statement</div>
+      <div style="font-size:11.5px;color:var(--ink2);line-height:1.6">${app.reason}</div>
+      ${app.experience?`<div style="font-size:11.5px;color:var(--ink2);line-height:1.6;margin-top:7px;padding-top:7px;border-top:1px solid var(--border-l)">${app.experience}</div>`:''}
+    </div>
+
+    <!-- Activity log -->
+    <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px">Activity</div>
+    ${app.history.map((h,i)=>`
+    <div style="display:flex;gap:9px;padding:6px 0;border-bottom:${i<app.history.length-1?'1px solid var(--border-l)':'none'}">
+      <div style="min-width:8px;margin-top:6px"><div style="width:8px;height:8px;border-radius:50%;background:var(--navy)"></div></div>
+      <div>
+        <div style="font-size:11px;color:var(--ink)">${h.event}</div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:1px">${h.ts}</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+
+/* ── Manage tab helpers ── */
+function imShowApplicants(jobId){
+  const job=IM_JOB_POSTS.find(j=>j.id===jobId);if(!job)return;
+  IM_JOB_POSTS.forEach(j=>delete j._showApplicants);
+  job._showApplicants=true;
+  imJobsTab='manage';render();
+}
+function imToggleJobPost(jobId){
+  const job=IM_JOB_POSTS.find(j=>j.id===jobId);if(!job)return;
+  job.active=!job.active;render();
+}
+function imPublishJobPost(){
+  alert('In production, this would open a form to create a new internal job posting from an approved Internal/Hybrid ticket.');
+}
+
+/* ── Update empStartApply to stay within im-jobs ── */
+function empStartApply(jobId){
+  empApplyJobId=jobId;
+  empApplyStep=1;
+  empAppData={jobId};
+  cur='im-jobs';  // stay on im-jobs page
+  render();       // re-render im-jobs which will call pgIMJobs
 }
 
 /* ═══════════════ INIT ═══════════════ */

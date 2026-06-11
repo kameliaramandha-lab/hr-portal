@@ -208,6 +208,7 @@ input:checked+.jp-slider:before{transform:translateX(18px)}
       <option value="rm">RM / Expansion</option>
       <option value="tl">TL Recruitment</option>
       <option value="rcm">Recruiter (RCM)</option>
+      <option value="rcm_project">RCM Project</option>
       <option value="hod">HoD / Province Lead</option>
       <option value="hrbp">HRBP</option>
       <option value="hm">Hiring Manager</option>
@@ -240,6 +241,7 @@ input:checked+.jp-slider:before{transform:translateX(18px)}
     <div class="sni" id="sni-tickets" data-p="tickets" onclick="nav('tickets')">
       <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.3"/><line x1="5" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.2"/><line x1="5" y1="8.5" x2="11" y2="8.5" stroke="currentColor" stroke-width="1.2"/></svg>All Tickets
     </div>
+
     <div class="sni" id="sni-assign" data-p="assignments" onclick="nav('assignments')">
       <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 13c0-2.761 2.686-5 6-5" stroke="currentColor" stroke-width="1.3"/><line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="1.3"/><line x1="10" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="1.3"/></svg>
       Assign Recruiter <span id="unassign-cnt" style="margin-left:auto;background:var(--spx);color:#fff;font-size:9px;padding:0 5px;border-radius:10px;display:none">0</span>
@@ -1530,13 +1532,15 @@ const PERSONAS={
   rm:   {label:'RM / Expansion',       name:'Andi Wirawan',      email:'andi.wirawan@spxexpress.com',     init:'AW', myT:['CTO-2025-0048','CTO-2025-0031']},
   tl:   {label:'TL Recruitment',       name:'Chandra Wijaya',    email:'chandra.wijaya@spxexpress.com',   init:'CW', myT:['CTO-2025-0048','CTO-2025-0039','CTO-2025-0031']},
   rcm:  {label:'Recruiter (RCM)',       name:'Rini Susanti',      email:'rini.susanti@spxexpress.com',     init:'RS', myT:['CTO-2025-0048']},
+  rcm_project:{label:'RCM Project',    name:'Miftah Alamsyah',   email:'miftah.alamsyah@spxexpress.com',  init:'MA', myT:TICKETS.map(t=>t.id)},
   hod:  {label:'HoD / Province Lead',  name:'Budi Hartono',      email:'budi.hartono@spxexpress.com',     init:'BH', myT:TICKETS.map(t=>t.id)},
   hrbp: {label:'HRBP',                 name:'Kamelia Ramandha',  email:'kamelia.ramandha@spxexpress.com', init:'KR', myT:TICKETS.map(t=>t.id)},
   admin:{label:'Super Admin',          name:'Super Admin',       email:'admin@spxexpress.com',            init:'SA', myT:TICKETS.map(t=>t.id)},
-  hm:   {label:'Hiring Manager',        name:'Agus Hermawan',     email:'agus.hermawan@spxexpress.com',    init:'AH', myT:TICKETS.filter(t=>t.hiringMgrEmail==='agus.hermawan@spxexpress.com'||t.hiringMgrEmail==='budi.hartono@spxexpress.com').map(t=>t.id)},
+  hm:   {label:'Hiring Manager',       name:'Agus Hermawan',     email:'agus.hermawan@spxexpress.com',    init:'AH', myT:TICKETS.filter(t=>t.hiringMgrEmail==='agus.hermawan@spxexpress.com'||t.hiringMgrEmail==='budi.hartono@spxexpress.com').map(t=>t.id)},
 };
 let currentRole='rm',cur='home',tcOpen=false,stOpen=false,dsfilt='All',tsrch='';
 let bulkRowCnt=2;
+let cfBulkSelected=new Set();  // tickets selected for CF bulk edit in All Tickets
 
 function me(){
   if(currentRole.startsWith('emp_')){
@@ -1556,6 +1560,7 @@ function can(p){
     rm:   ['submit','track','pool_view'],
     tl:   ['view_all','edit','assign','team','leads','salary'],
     rcm:  ['view_all','edit_own','leads'],
+    rcm_project:['view_all','cf_edit'],
     hod:  ['view_all','approve','pool_view'],
     hrbp: ['view_all','force_edit','pool_view','submit'],
     admin:['submit','track','view_all','edit','assign','team','leads','salary','approve','force_edit','manage','pool_view'],
@@ -1622,6 +1627,7 @@ function switchRole(r){
   // All Tickets: hidden from RM, HRBP; HM sees own tickets here
   const ticketsEl=document.getElementById('sni-tickets');
   if(ticketsEl)ticketsEl.classList.toggle('lk',currentRole==='rm'||currentRole==='hrbp');
+
   // Assign Recruiter: TL and admin only
   const assignEl=document.getElementById('sni-assign');
   if(assignEl)assignEl.classList.toggle('lk',currentRole!=='tl'&&currentRole!=='admin');
@@ -1895,7 +1901,7 @@ function pgHome(){
 /* ═══════════════ NEW HIRING REQUEST ═══════════════ */
 function pgNewRequest(){
   if(!can('submit')&&currentRole!=='tl'&&currentRole!=='admin'&&currentRole!=='hrbp')
-    return`<div class="ptitle">New Hiring Request</div><div style="padding:40px;text-align:center;color:var(--ink3)"><div style="font-size:30px;margin-bottom:10px"></div><div>Access restricted.</div></div>`;
+    return`<div class="ptitle">New Hiring Request</div><div style="padding:40px;text-align:center;color:var(--ink3)"><div>Access restricted.</div></div>`;
   const today=new Date().toISOString().slice(0,10),p=me();
   const rankOpts=RANK_OPTIONS.map(r=>`<option>${r}</option>`).join('');
   const stOpts=STATIONS.map(s=>`<option value="${s.id}">${s.id} — ${s.name} (${s.prov})</option>`).join('');
@@ -1909,15 +1915,16 @@ function pgNewRequest(){
   const hrbpAreaOpts=HRBP_PEOPLE.map(h=>`<option value="${h.email}">${h.name}</option>`).join('');
 
   return`<div class="ptitle">New Hiring Request</div>
-  <div class="psub">All fields marked * are required · Auto fields are filled by the system</div>
+  <div class="psub">Submit one hiring demand request for approval. All fields marked <span style="color:var(--err)">*</span> are required.</div>
+
   <!-- Mode toggle -->
   <div style="display:flex;gap:7px;margin-bottom:14px;align-items:center">
-    <div onclick="setSM('single')" id="ms" style="display:flex;align-items:center;gap:7px;padding:8px 15px;border-radius:8px;border:2px solid var(--spx);background:var(--spx-l);cursor:pointer;font-size:11.5px;font-weight:600;color:var(--spx)">
+    <div onclick="setSM('single')" id="ms" style="display:flex;align-items:center;gap:7px;padding:8px 15px;border-radius:8px;border:2px solid var(--navy);background:var(--navy-l);cursor:pointer;font-size:11.5px;font-weight:600;color:var(--navy)">
       <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.4"/></svg>Single
     </div>
-    <div onclick="setSM('bulk')" id="mb" style="display:flex;align-items:center;gap:7px;padding:8px 15px;border-radius:8px;border:1.5px solid #E5E5E5;background:#fff;cursor:pointer;font-size:11.5px;font-weight:500;color:var(--ink3)">
+    <div onclick="setSM('bulk')" id="mb" style="display:flex;align-items:center;gap:7px;padding:8px 15px;border-radius:8px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:11.5px;font-weight:500;color:var(--ink3)">
       <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
-      Bulk <span style="font-size:9.5px;padding:1px 6px;border-radius:20px;background:var(--warn-l);color:var(--warn);font-weight:600">Excel / Multi-hub</span>
+      Bulk <span style="font-size:9.5px;padding:1px 6px;border-radius:10px;background:var(--warn-l);color:var(--warn);font-weight:600">Excel / Multi-hub</span>
     </div>
     <span id="mh" style="font-size:10.5px;color:var(--ink3)">One position per submission</span>
   </div>
@@ -1928,7 +1935,7 @@ function pgNewRequest(){
       <div class="hdr"></div>
       <div class="ct">Bulk submission — multiple positions / hubs
         <div style="display:flex;gap:6px">
-          <button class="btn sm" onclick="toggleExcel()">⬆ Excel upload</button>
+          <button class="btn sm" onclick="toggleExcel()">Upload Excel</button>
           <button class="btn sm" onclick="addBR()">+ Add row</button>
           <button class="btn sm grn" onclick="submitBulk()">Submit all rows</button>
         </div>
@@ -1940,16 +1947,15 @@ function pgNewRequest(){
           <input type="file" accept=".xlsx,.xls,.csv" style="font-size:10.5px;max-width:240px;padding:4px 7px"/>
           <button class="btn sm p">Validate & preview</button>
         </div>
-        <div style="font-size:9.5px;color:var(--ink3);margin-top:7px">Required columns: HRIS Line · Station ID · HC · Category · Emp Status · Rank · Source · Reason · Director Email · HRBP Area Email</div>
+        <div style="font-size:9.5px;color:var(--ink3);margin-top:7px">Required columns: HRIS Line · Station ID · HC · Category · Emp Status · Rank · Reason · Director Email · HRBP Area Email</div>
       </div>
-      <div style="overflow-x:auto"><table id="bulk-tbl" style="min-width:1100px;font-size:10.5px">
+      <div style="overflow-x:auto"><table id="bulk-tbl" style="min-width:1000px;font-size:10.5px">
         <thead><tr style="background:var(--navy-ll)">
           <th>#</th><th>Station *</th><th>HRIS Line *</th><th>HC *</th><th>Category *</th>
-          <th>Emp. status *</th><th>Rank *</th><th>Source *</th><th>Reason *</th><th>ADO check</th><th></th>
+          <th>Emp. status *</th><th>Rank *</th><th>Reason *</th><th></th>
         </tr></thead>
         <tbody id="bulk-rows">
-          ${[{n:1,hc:1,chk:'Within ADO',chkS:'background:var(--ok-l);color:var(--ok)'},
-             {n:2,hc:3,chk:'Exceeds ADO',chkS:'background:var(--err-l);color:var(--err)'}].map(r=>`
+          ${[{n:1,hc:1},{n:2,hc:3}].map(r=>`
           <tr id="br-${r.n}">
             <td style="color:var(--ink3)">${r.n}</td>
             <td><select style="font-size:10px;padding:3px 5px;min-width:110px"><option value="">Station...</option>${stOpts}</select></td>
@@ -1958,16 +1964,14 @@ function pgNewRequest(){
             <td><select style="font-size:10px;padding:3px 5px"><option>Expansion</option><option>Replacement</option><option>New Hire</option><option>Value Chain Req</option><option>Top Down Hiring</option></select></td>
             <td><select style="font-size:10px;padding:3px 5px"><option>Contract</option><option>Permanent</option></select></td>
             <td><select style="font-size:10px;padding:3px 5px">${rankOpts}</select></td>
-            <td><select style="font-size:10px;padding:3px 5px"><option>External</option><option>Internal</option><option>Hybrid</option></select></td>
-            <td><select style="font-size:10px;padding:3px 5px"><option>Attrition - Specialized skill set</option><option>Attrition - Core revenue function</option><option>Attrition - Productivity-driven role</option><option>Growth - New Team</option></select></td>
-            <td><span style="font-size:9.5px;padding:2px 6px;border-radius:20px;${r.chkS};font-weight:600">${r.chk}</span></td>
+            <td><input style="font-size:10px;padding:3px 6px;min-width:180px" placeholder="Business justification..."/></td>
             <td><button onclick="removeBR(${r.n})" style="background:none;border:none;color:var(--border);cursor:pointer;font-size:13px">✕</button></td>
           </tr>`).join('')}
         </tbody>
       </table></div>
     </div>
     <div style="display:flex;gap:7px;margin-bottom:18px">
-      <button class="btn grn p" onclick="submitBulk()">Submit all rows</button>
+      <button class="btn p" onclick="submitBulk()">Submit all rows</button>
       <button class="btn" onclick="setSM('single')">← Back to single</button>
     </div>
   </div>
@@ -1977,23 +1981,16 @@ function pgNewRequest(){
   <div id="form-ok" style="display:none"></div>
   <div class="card" id="req-form"><div class="hdr"></div>
 
-    <!-- S1: Request Info -->
+    <!-- S1: Request Information -->
     <div class="fsec">
       <div class="fstitle">Request Information</div>
+      <div class="fg2" style="margin-bottom:11px">
+        <div><label>Date Inputted</label><div class="av">${today}</div></div>
+        <div><label>RM / HRBP Email</label><div class="av">${p.email}</div></div>
+      </div>
       <div class="fg2">
-        <div><label>Date Inputted (Auto)</label><div class="av">${today}</div></div>
-        <div><label>RM / HRBP Email (Auto)</label><div class="av">${p.email}</div></div>
-        <div><label>Area *</label>
-          <select id="f-area">
-            <option value="">Select region...</option>
-            <option value="Region 1 (Jabo)">Region 1 — Jabo</option>
-            <option value="Region 2 (Jabar)">Region 2 — Jabar</option>
-            <option value="Region 3 (Jateng Jatim)">Region 3 — Jateng Jatim</option>
-            <option value="Region 4 (Sumatera)">Region 4 — Sumatera</option>
-            <option value="Region 5 (Balnus, Kalimantan, Sulawesi, Maluku, Papua)">Region 5 — Balnus, Kalimantan, Sulawesi, Maluku, Papua</option>
-          </select></div>
-        <div><label>Category *</label>
-          <select id="f-category" onchange="toggleGoLive()">
+        <div><label>Request Type (Category) <span style="color:var(--err)">*</span></label>
+          <select id="f-category" onchange="toggleGoLive();prefillReason()">
             <option value="">Select...</option>
             <option>Expansion</option>
             <option>Replacement</option>
@@ -2001,22 +1998,20 @@ function pgNewRequest(){
             <option>Value Chain Req - Adhoc Urgent</option>
             <option>Top Down Hiring</option>
           </select></div>
-        <div id="golive-wrap" style="display:none"><label>Go-Live Date * (Expansion only)</label>
+        <div id="golive-wrap" style="display:none"><label>Go-Live Date <span style="color:var(--err)">*</span> (Expansion only)</label>
           <input id="f-golive" type="date"/></div>
-        <div><label>Ops / Non-Ops *</label>
+        <div><label>Hiring Type <span style="color:var(--err)">*</span></label>
+          <select id="f-hiring-type">
+            <option value="">Select...</option>
+            <option value="External">External</option>
+            <option value="Internal">Internal</option>
+            <option value="Hybrid">Hybrid</option>
+          </select></div>
+        <div><label>Ops / Non-Ops <span style="color:var(--err)">*</span></label>
           <select id="f-ops">
             <option value="">Select...</option>
             <option>Ops</option>
             <option>Non-Ops</option>
-          </select></div>
-        <div><label>Director's Email *</label>
-          <select id="f-director"><option value="">Select...</option>${dirOpts}</select></div>
-        <div><label>IC / Team Lead *</label>
-          <select id="f-ictl">
-            <option value="">Select...</option>
-            <option>CS Ops Lead & Supervisor</option>
-            <option>Reporting Manager</option>
-            <option>Individual Contributor</option>
           </select></div>
       </div>
     </div>
@@ -2025,17 +2020,22 @@ function pgNewRequest(){
     <div class="fsec">
       <div class="fstitle">Role Details</div>
       <div class="fg2">
-        <div style="grid-column:1/-1"><label>HRIS Line *</label>
+        <div style="grid-column:1/-1"><label>HRIS Line <span style="color:var(--err)">*</span></label>
           <select id="f-hris" onchange="autoHRIS(this.value)" style="font-size:10.5px;width:100%">
             <option value="">Select HRIS line...</option>${hrisOpts}
           </select></div>
-        <div><label>Category Role (Auto — last segment of HRIS Line)</label>
-          <div class="av" id="av-catrole">— select HRIS line</div></div>
-        <div><label>Standard HRIS Role (Auto — Job Dictionary)</label>
+        <div><label>IC / Team Lead <span style="color:var(--err)">*</span></label>
+          <select id="f-ictl" onchange="autoHRIS(document.getElementById('f-hris')?.value)">
+            <option value="">Select...</option>
+            <option>CS Ops Lead & Supervisor</option>
+            <option>Reporting Manager</option>
+            <option>Individual Contributor</option>
+          </select></div>
+        <div><label>Standard HRIS Role <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(auto)</span></label>
           <div class="av" id="av-stdrole">—</div></div>
-        <div><label>Role ID (Auto — Job Dictionary)</label>
+        <div><label>Job Role ID <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(auto)</span></label>
           <div class="av" id="av-roleid">—</div></div>
-        <div><label>Frontliner / Corporate (Auto)</label>
+        <div><label>Frontliner / Corporate <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(auto)</span></label>
           <div class="av" id="av-fl">—</div></div>
       </div>
     </div>
@@ -2044,13 +2044,25 @@ function pgNewRequest(){
     <div class="fsec">
       <div class="fstitle">Location</div>
       <div class="fg2">
-        <div><label>Location — Station ID *</label>
+        <div style="grid-column:1/-1"><label>Station <span style="color:var(--err)">*</span></label>
           <select id="f-station" onchange="autoStation(this.value)" style="font-size:10.5px">
             <option value="">Select station...</option>${stOpts}
           </select></div>
-        <div><label>Province (Auto)</label><div class="av" id="av-prov">—</div></div>
-        <div><label>City (Auto)</label><div class="av" id="av-city">—</div></div>
-        <div><label>Region (Auto)</label><div class="av" id="av-reg">—</div></div>
+        <div><label>Province <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(auto)</span></label>
+          <div class="av" id="av-prov">—</div></div>
+        <div><label>City <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(auto)</span></label>
+          <div class="av" id="av-city">—</div></div>
+        <div><label>Sub-region <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(auto)</span></label>
+          <div class="av" id="av-reg">—</div></div>
+        <div><label>Area / Region <span style="color:var(--err)">*</span></label>
+          <select id="f-area">
+            <option value="">Select region...</option>
+            <option value="Region 1 (Jabo)">Region 1 — Jabo</option>
+            <option value="Region 2 (Jabar)">Region 2 — Jabar</option>
+            <option value="Region 3 (Jateng Jatim)">Region 3 — Jateng Jatim</option>
+            <option value="Region 4 (Sumatera)">Region 4 — Sumatera</option>
+            <option value="Region 5 (Balnus, Kalimantan, Sulawesi, Maluku, Papua)">Region 5 — Balnus, Kalimantan, Sulawesi, Maluku, Papua</option>
+          </select></div>
       </div>
     </div>
 
@@ -2058,23 +2070,23 @@ function pgNewRequest(){
     <div class="fsec">
       <div class="fstitle">Rank & Employment</div>
       <div class="fg3">
-        <div><label>Minimum Rank (Auto — Job Dictionary)</label>
-          <div class="av" id="av-minrank">— select HRIS line + IC/TL</div></div>
-        <div><label>Rank * (User selected)</label>
+        <div><label>Minimum Rank <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(auto — Job Dictionary)</span></label>
+          <div class="av" id="av-minrank">— select HRIS + IC/TL</div></div>
+        <div id="rank-select-wrap"><label>Rank <span style="color:var(--err)">*</span></label>
           <select id="f-rank" onchange="checkRank()">
             <option value="">Select rank...</option>${rankOpts}
           </select></div>
-        <div><label>Category Rank (Auto)</label>
-          <div class="av" id="av-catrack">— select rank + min rank</div></div>
-        <div id="justif-wrap" style="display:none"><label>Justification * (Required — rank ≠ minimum)</label>
-          <select id="f-justif">
-            <option value="">Select justification...</option>
-            <option>Specialized skill set exceeds base</option>
-            <option>Market rate adjustment</option>
-            <option>Internal equity adjustment</option>
-            <option>Top-down directive</option>
-          </select></div>
-        <div><label>Employment Status *</label>
+        <div id="rank-fixed-wrap" style="display:none"><label>Rank <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(fixed for this role)</span></label>
+          <div class="av" id="av-fixed-rank">—</div></div>
+        <div><label>Rank Category <span style="color:var(--ink3);font-weight:400;text-transform:none;font-size:9px">(auto)</span></label>
+          <div class="av" id="av-catrack">—</div></div>
+      </div>
+      <div id="justif-wrap" style="display:none;margin-top:11px">
+        <label>Rank Justification <span style="color:var(--err)">*</span> — required when rank differs from minimum</label>
+        <textarea id="f-justif" rows="3" placeholder="Explain why the selected rank differs from the job dictionary minimum..."></textarea>
+      </div>
+      <div class="fg2" style="margin-top:11px">
+        <div><label>Employment Status <span style="color:var(--err)">*</span></label>
           <select id="f-emp">
             <option value="">Select...</option>
             <option>Contract</option>
@@ -2083,34 +2095,31 @@ function pgNewRequest(){
       </div>
     </div>
 
-    <!-- S5: Reason & Source -->
+    <!-- S5: Reason -->
     <div class="fsec">
       <div class="fstitle">Reason & Source</div>
-      <div class="fg2">
-        <div><label>Reason of Hiring *</label>
-          <select id="f-reason-hiring" onchange="fillReason()">
+      <div class="fg2" style="margin-bottom:11px">
+        <div><label>Reason of Hiring <span style="color:var(--err)">*</span></label>
+          <select id="f-reason-hiring" onchange="prefillReason()">
             <option value="">Select...</option>
             <option value="as">Attrition - Specialized skill set</option>
             <option value="ac">Attrition - Core revenue function</option>
             <option value="ap">Attrition - Productivity-driven role</option>
             <option value="gn">Growth - New Team</option>
           </select></div>
-        <div style="grid-column:1/-1"><label>Reason (Text) *</label>
-          <textarea id="f-reason" rows="3" placeholder="Business justification will be pre-filled based on Reason of Hiring — you can edit it..."></textarea></div>
       </div>
+      <div><label>Reason Description <span style="color:var(--err)">*</span></label>
+        <textarea id="f-reason" rows="4" placeholder="Describe the business justification. Pre-filled from Request Type and Reason of Hiring above."></textarea></div>
     </div>
 
     <!-- S6: People & Approvers -->
     <div class="fsec">
       <div class="fstitle">People & Approvers</div>
       <div class="fg2">
-        <div><label>Hiring Manager Email *</label>
-          <input id="f-hmgr" type="email" placeholder="manager@spxexpress.com"/></div>
-        <div><label>HRBP (Watcher) *</label>
+        <div><label>HRBP Area Email <span style="color:var(--err)">*</span></label>
           <select id="f-hrbp"><option value="">Select HRBP...</option>
             ${hrbpAreaOpts}
           </select>
-          <div style="font-size:10px;color:var(--ink3);margin-top:4px">Selected HRBP will be set as watcher and notified on ticket updates.</div>
         </div>
       </div>
     </div>
@@ -2135,45 +2144,55 @@ function autoHRIS(v){
   const parts=v.split(' > ');
   const last=parts[parts.length-1]||'';
   const setAV=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
-  setAV('av-catrole', last);
   // Simulate Job Dictionary lookup using last segment
   setAV('av-stdrole', last);
   setAV('av-roleid', 'JD-'+last.replace(/\s+/g,'-').toUpperCase().slice(0,12));
   const fl=v.includes('Field Operations')?'Frontliner':'Corporate';
   setAV('av-fl', fl);
-  // Update min rank based on known roles
+  // Min rank lookup
   const minRankMap={'SOC Lead':'Associate','City Lead':'Senior Associate','FM Hub Lead':'Associate','LM Hub Lead':'Associate','LM Hub Shift Lead':'Associate','SOC Cache Lead':'Associate','SOC EHA Lead':'Associate','SOC Shift Lead':'Junior Associate','SOC Team Lead':'Junior Associate','MM Supervisor':'Associate','MM Coordinator':'Analyst','MM Area Lead':'Senior Associate','Supervisor':'Junior Associate','Hub City Lead':'Senior Associate','Province Lead':'Manager','Control Tower Supervisor':'Associate','Control Tower Team Lead':'Junior Associate','CS Team Lead':'Junior Associate','CS Support':'Analyst','Agent':'Analyst','HRBP':'Associate','People Search':'Junior Associate','HR Operations':'Analyst','Payroll':'Analyst','Process Improvement':'Associate','Quality Assurance':'Associate','Quality Development':'Associate','Driver Management Supervisor':'Associate','Driver Management Area Lead':'Senior Associate','Expansion Specialist':'Associate','Expansion PMO':'Associate','Fleet Management':'Junior Associate','Cost Control':'Associate','Implementation':'Junior Associate','BPO Payroll':'Analyst','Field Investigator':'Analyst'};
   const mr=minRankMap[last]||'Analyst';
   setAV('av-minrank', mr);
-  checkRank();
-  calcCC();
+
+  // Fixed rank roles — Hub Lead and Shift Lead positions have a non-negotiable rank
+  const FIXED_RANK={
+    'Hub Lead':'Associate','LM Hub Lead':'Associate','FM Hub Lead':'Associate',
+    'SOC Cache Lead':'Associate','SOC EHA Lead':'Associate',
+    'Shift Lead':'Junior Associate','SOC Shift Lead':'Junior Associate',
+    'LM Hub Shift Lead':'Junior Associate','FM Shift Lead':'Junior Associate',
+    'SOC Cache Shift Lead':'Junior Associate','SOC EHA Shift Lead':'Junior Associate',
+    'SOC Export Shift Lead':'Junior Associate',
+  };
+  const fixedRank=FIXED_RANK[last]||null;
+  const selectWrap=document.getElementById('rank-select-wrap');
+  const fixedWrap=document.getElementById('rank-fixed-wrap');
+  const rankSel=document.getElementById('f-rank');
+  if(fixedRank){
+    // Lock rank — show read-only badge, hide dropdown
+    if(selectWrap) selectWrap.style.display='none';
+    if(fixedWrap)  fixedWrap.style.display='block';
+    setAV('av-fixed-rank', fixedRank);
+    if(rankSel) rankSel.value=fixedRank;  // keep value in sync for submitReq
+    // Auto-fill rank category as matching minimum
+    setAV('av-catrack','Matches minimum rank (fixed)');
+    const justWrap=document.getElementById('justif-wrap');
+    if(justWrap) justWrap.style.display='none';
+  } else {
+    // Normal rank — show dropdown
+    if(selectWrap) selectWrap.style.display='block';
+    if(fixedWrap)  fixedWrap.style.display='none';
+    if(rankSel) rankSel.value='';
+    setAV('av-catrack','—');
+    checkRank();
+  }
 }
 
 function autoStation(sid){
   const s=stById(sid);
-  const setAV=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
-  setAV('av-prov', s.prov||'—');
-  setAV('av-city', s.city||'—');
-  setAV('av-reg',  s.reg||'—');
-  // UMK
-  const umkEl=document.getElementById('cc-umk');
-  const umkLEl=document.getElementById('cc-umk-l');
-  if(umkEl)umkEl.textContent=s.umk?'Rp '+s.umk.toLocaleString('id-ID'):'—';
-  if(umkLEl)umkLEl.textContent=s.id?s.id+' UMK':'Auto from station';
-  // Load MPP
-  const h=HUB_MPP[sid];
-  if(h){
-    const roleEl=document.getElementById('av-catrole');
-    const roleName=roleEl?roleEl.textContent:'SOC Lead';
-    const rd=h.roles[roleName]||Object.values(h.roles)[0];
-    const setID=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
-    setID('mpp-ado', h.ado.toLocaleString());
-    setID('mpp-std', rd?rd.std:'—');
-    setID('mpp-just', rd?Math.round(h.ado/rd.std):'—');
-    setID('mpp-cur', rd?rd.mppCurrent:'—');
-    setID('mpp-plan', rd?rd.mppPlanned:'—');
-  }
-  calcCC();
+  const setAV=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val||'—';};
+  setAV('av-prov', s.prov);
+  setAV('av-city', s.city);
+  setAV('av-reg',  s.reg);
 }
 
 function checkRank(){
@@ -2204,16 +2223,31 @@ function checkRank(){
   }
 }
 
-function fillReason(){
-  const v=document.getElementById('f-reason-hiring')?.value;
-  const ta=document.getElementById('f-reason');if(!ta)return;
-  const templates={
-    as:'Replacement: replace a resigned employee (SPXIDXXXX) to maintain operational continuity.',
-    ac:'Replacement: replace a resigned employee (SPXIDXXXX) whose role is critical to core revenue operations.',
-    ap:'Replacement: backfill a productivity-driven role (SPXIDXXXX) to maintain throughput targets.',
-    gn:'New Hire: adding new team members to support the [XX Project], with the goal of improving team performance and achieving enhanced outcomes.'
+function prefillReason(){
+  const cat=document.getElementById('f-category')?.value||'';
+  const roh=document.getElementById('f-reason-hiring')?.value||'';
+  const ta=document.getElementById('f-reason');
+  if(!ta) return;
+  // Only pre-fill if field is empty — don't overwrite user edits
+  if(ta.value.trim()) return;
+  // Category-level templates (broad)
+  const catTemplates={
+    'Expansion':'Expanding the team on a larger scale to support a national-level project, ensuring sufficient capacity for growth and operational success.',
+    'Replacement':'Replacing a resigned employee (SPXIDXXXX) to maintain operational continuity.',
+    'New Hire':'Adding new team members to support the [XX Project], with the goal of improving team performance and achieving enhanced outcomes.',
+    'Value Chain Req - Adhoc Urgent':'Fulfilling an urgent value chain requirement to address immediate operational needs.',
+    'Top Down Hiring':'Fulfilling a top-down hiring directive to strengthen team capacity.',
   };
-  if(v&&templates[v]&&!ta.value)ta.value=templates[v];
+  // Reason of Hiring narrows the replacement reason
+  const rohTemplates={
+    as:'Replacement: replacing a resigned employee (SPXIDXXXX) with a specialized skill set critical to operations.',
+    ac:'Replacement: replacing a resigned employee (SPXIDXXXX) whose role is central to core revenue functions.',
+    ap:'Replacement: backfilling a productivity-driven role (SPXIDXXXX) to maintain throughput targets.',
+    gn:'New Hire: adding new team members to support the [XX Project], improving team performance and outcomes.',
+  };
+  // Reason of Hiring takes priority if selected; otherwise use Category
+  if(roh && rohTemplates[roh]) ta.value=rohTemplates[roh];
+  else if(cat && catTemplates[cat]) ta.value=catTemplates[cat];
 }
 
 function calcCC(){
@@ -2222,8 +2256,9 @@ function calcCC(){
   const hc=parseInt(hcEl?.value)||1;
   const h=HUB_MPP[sid];
   if(!h){document.getElementById('cc-na').style.display='flex';document.getElementById('cc-ok').style.display='none';document.getElementById('cc-over').style.display='none';return;}
-  const roleEl=document.getElementById('av-catrole');
-  const roleName=roleEl?roleEl.textContent:'SOC Lead';
+  const hris=document.getElementById('f-hris')?.value||'';
+  const parts=hris.split(' > ');
+  const roleName=parts[parts.length-1]||'SOC Lead';
   const rd=h.roles[roleName]||Object.values(h.roles)[0];
   if(!rd){return;}
   const justified=Math.round(h.ado/rd.std);
@@ -2260,11 +2295,16 @@ function submitBulk(){const msg=document.getElementById('bulk-msg');if(msg){msg.
 
 function submitReq(){
   const g=id=>document.getElementById(id)?.value||'';
-  const area=g('f-area'), cat=g('f-category'), ops=g('f-ops'), hris=g('f-hris');
-  const station=g('f-station'), rank=g('f-rank'), emp=g('f-emp');
-  const rh=g('f-reason-hiring'), hrbp=g('f-hrbp');
-  const dir=g('f-director'), ictl=g('f-ictl'), hmgr=g('f-hmgr');
-  if(!area||!cat||!ops||!hris||!station||!rank||!emp||!rh||!hrbp||!dir||!ictl){
+  const av=id=>document.getElementById(id)?.textContent?.trim()||'';
+  const area=g('f-area');
+  const cat=g('f-category'), ops=g('f-ops'), hris=g('f-hris');
+  const station=g('f-station'), emp=g('f-emp'), hrbp=g('f-hrbp');
+  const ictl=g('f-ictl'), hiringType=g('f-hiring-type');
+  // Rank: use fixed rank if shown, else dropdown value
+  const fixedWrap=document.getElementById('rank-fixed-wrap');
+  const rankFixed=fixedWrap&&fixedWrap.style.display!=='none'?av('av-fixed-rank'):'';
+  const rank=rankFixed||g('f-rank');
+  if(!area||!cat||!ops||!hris||!station||!rank||!emp||!hrbp||!ictl||!hiringType){
     alert('Please fill all required fields (*).');return;
   }
   const parts=hris.split(' > ');
@@ -2273,17 +2313,16 @@ function submitReq(){
   const now=new Date().toISOString().slice(0,10);
   const newId='CTO-'+new Date().getFullYear()+'-'+String(Math.floor(Math.random()*9000)+1000).padStart(4,'0');
   const hc=parseInt(document.getElementById('f-hc')?.value)||1;
-  const av=id=>document.getElementById(id)?.textContent||'';
   TICKETS.unshift({
     id:newId, dateInputed:now, week:'W'+Math.ceil(new Date().getDate()/7)+'-'+new Date().getFullYear(),
-    rmEmail:me().email, area, backfill:cat, hiringType:null, sourceOfHiring:null, hc,
+    rmEmail:me().email, area, backfill:cat, hiringType, sourceOfHiring:null, hc,
     roleName, roleId:av('av-roleid'), roleNature:av('av-fl'),
     teamHRIS:hris, reportingLine:hris, opsNonOps:ops,
     stationId:station, locProv:s.prov||'', locCity:s.city||'', locReg:s.reg||'',
     placement:s.name||'', initialPlacement:s.initName||'',
-    hod1Email:dir, hiringMgrEmail:hmgr,
+    hod1Email:'', hiringMgrEmail:'',
     hrbpEmail:hrbp, watcher:hrbp,
-    reasonHiring:rh, reason:g('f-reason'),
+    reasonHiring:g('f-reason-hiring'), reason:g('f-reason'),
     empStatus:emp, statusRank:av('av-catrack'),
     minRank:av('av-minrank'), maxRank:rank, expectedRank:rank,
     justification:g('f-justif'), ictl,
@@ -2309,16 +2348,20 @@ function submitReq(){
 }
 
 function clearReq(){
-  ['f-area','f-category','f-ops','f-director','f-ictl','f-hris','f-station','f-rank','f-emp','f-reason-hiring','f-hrbp','f-hmgr','f-justif','f-golive'].forEach(id=>{
+  ['f-area','f-category','f-ops','f-hiring-type','f-ictl','f-hris','f-station',
+   'f-rank','f-emp','f-reason-hiring','f-hrbp','f-golive'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
-  ['f-reason'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['av-catrole','av-stdrole','av-roleid','av-fl','av-minrank','av-prov','av-city','av-reg','av-catrack'].forEach(id=>{
+  ['f-reason','f-justif'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['av-stdrole','av-roleid','av-fl','av-minrank','av-prov','av-city','av-reg','av-catrack','av-fixed-rank'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.textContent='—';
   });
+  const selectWrap=document.getElementById('rank-select-wrap');
+  const fixedWrap=document.getElementById('rank-fixed-wrap');
+  if(selectWrap) selectWrap.style.display='block';
+  if(fixedWrap)  fixedWrap.style.display='none';
   const goLive=document.getElementById('golive-wrap');if(goLive)goLive.style.display='none';
   const justif=document.getElementById('justif-wrap');if(justif)justif.style.display='none';
-  const hcEl=document.getElementById('f-hc');if(hcEl)hcEl.value='1';
 }
 /* ═══════════════ ALL TICKETS — fully approved + claimed + assigned ═══════════════ */
 /* shared filter state — used by both pgTickets and pgAssignments */
@@ -2509,7 +2552,8 @@ function pgTickets(){
         ?`<span style="font-size:9px;color:var(--ok);background:var(--ok-l);padding:1px 7px;border-radius:10px;font-weight:500">Confirmed</span>`
         :`<span style="font-size:9px;color:var(--warn);background:var(--warn-l);padding:1px 7px;border-radius:10px;font-weight:600;cursor:pointer" onclick="confirmReceipt('${t.id}')">Confirm</span>`)
       :'';
-    return`<tr ${rc}>
+    const isSelected=cfBulkSelected.has(t.id);
+    return`<tr ${rc} id="cf-row-${t.id}">
       <td><span class="mono" style="cursor:pointer;color:var(--spx)" onclick="viewTicket('${t.id}')">${t.id}</span></td>
       <td style="font-weight:500;font-size:11.5px">${t.roleName}</td>
       <td style="font-size:10.5px">${t.locCity}</td>
@@ -2518,19 +2562,26 @@ function pgTickets(){
       <td><span class="tag" style="background:#F0F4FF;color:var(--navy);font-size:9.5px">${t.backfill||'—'}</span></td>
       <td>${sbadge(t.status)}</td>
       <td>${apprBadge}</td>
-      <td>${(isTL()||currentRole==='admin')?priorityBadge(t):''}</td>
+      <td>${(isTL()||currentRole==='admin'||currentRole==='rcm_project')?priorityBadge(t):''}</td>
       <td style="font-size:10.5px;font-weight:500">${t.tl||'—'}</td>
       <td style="font-size:10.5px;color:var(--ink3)">${t.rcm||'<span style="color:var(--border);font-style:italic">—</span>'}</td>
       <td style="font-size:10.5px;text-align:center">${jpBadge}</td>
       ${currentRole==='rcm'?`<td>${receiptBadge}</td>`:''}
+      ${['rcm','tl','rcm_project','admin'].includes(currentRole)?`
+      <td style="font-size:10.5px;white-space:nowrap">
+        ${t.cfWeek?`<span class="mono" style="font-size:10.5px;font-weight:500;color:var(--navy)">${t.cfWeek}</span>`:`<span style="color:var(--border)">—</span>`}
+      </td>
+      <td style="font-size:10.5px;white-space:nowrap">
+        ${t.cfDate?`<span style="font-size:10.5px;font-weight:600;color:var(--ok)">${t.cfDate}</span>`:`<span style="color:var(--border)">—</span>`}
+      </td>`:''}
       <td style="text-align:center;font-weight:600">${t.hc||1}</td>
       <td style="font-size:10.5px">${t.aging}</td>
       <td><div style="display:flex;gap:3px;flex-wrap:wrap">
         <button class="btn sm" onclick="viewTicket('${t.id}')">View</button>
-        ${edit?`<button class="btn sm blue">✏ Edit</button>`:''}
+        ${edit?`<button class="btn sm blue">Edit</button>`:''}
         ${(!edit&&currentRole==='rcm')?`<span class="lock-chip"></span>`:''}
-        ${notif&&!notif.confirmed?`<button class="btn sm" style="background:#155724;color:#fff;border-color:var(--ok);font-size:10px" onclick="confirmReceipt('${t.id}')">Confirm Receipt</button>`:''}
-        ${(can('approve')&&t.approvals.some(a=>a.status==='Pending'))?`<button class="btn sm" style="background:var(--warn-l);color:var(--warn);border-color:#FFE69C" onclick="viewTicket('${t.id}')">Review</button>`:''}
+        ${notif&&!notif.confirmed?`<button class="btn sm" style="background:var(--ok);color:#fff;border-color:var(--ok);font-size:10px" onclick="confirmReceipt('${t.id}')">Confirm Receipt</button>`:''}
+        ${(can('approve')&&t.approvals.some(a=>a.status==='Pending'))?`<button class="btn sm" style="background:var(--warn-l);color:var(--warn);border-color:var(--warn-b)" onclick="viewTicket('${t.id}')">Review</button>`:''}
       </div></td>
     </tr>`;
   }).join('');
@@ -2556,6 +2607,7 @@ function pgTickets(){
     <div class="ptitle">All Tickets</div>
     <div style="display:flex;gap:7px">
       ${can('submit')||currentRole==='tl'||currentRole==='admin'?`<button class="btn p" onclick="nav('new-request')">+ New request</button>`:''}
+      ${['rcm_project','tl','admin'].includes(currentRole)?`<button class="btn" onclick="openCFModal()">CF Approval</button>`:''}
       <button class="btn">Export</button>
     </div>
   </div>
@@ -2606,11 +2658,13 @@ function pgTickets(){
 
   <!-- All tickets tab -->
   ${currentRole!=='rcm'||activeTab==='all'?`
-  ${filterPanel(currentRole==='tl'||currentRole==='admin'||currentRole==='hrbp')}
+  ${filterPanel(currentRole==='tl'||currentRole==='admin'||currentRole==='hrbp'||currentRole==='rcm_project')}
   <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto">
-  <table style="min-width:${currentRole==='rcm'?'1260':'1240'}px">
-    <tr><th>CTO ID</th><th>Role name</th><th>City</th><th>Province</th><th>Hub</th><th>Type</th><th>Status</th><th>Approval</th><th>Priority</th><th>TL</th><th>RCM</th><th>Webform</th>${currentRole==='rcm'?'<th>Receipt</th>':''}<th>HC</th><th>Aging</th><th>Actions</th></tr>
-    ${rows||`<tr><td colspan="${currentRole==='rcm'?16:15}" style="text-align:center;padding:28px;color:var(--border)">No tickets match. <span style="cursor:pointer;text-decoration:underline;color:var(--spx)" onclick="tfClear()">Clear filters</span></td></tr>`}
+  <table style="min-width:${currentRole==='rcm'||currentRole==='rcm_project'?'1420':'1240'}px">
+    <tr>
+      <th>CTO ID</th><th>Role name</th><th>City</th><th>Province</th><th>Hub</th><th>Type</th><th>Status</th><th>Approval</th><th>Priority</th><th>TL</th><th>RCM</th><th>Webform</th>${currentRole==='rcm'?'<th>Receipt</th>':''}${['rcm','tl','rcm_project','admin'].includes(currentRole)?'<th>CF Week</th><th>CF Date</th>':''}<th>HC</th><th>Aging</th><th>Actions</th>
+    </tr>
+    ${rows||`<tr><td colspan="${['rcm_project','admin'].includes(currentRole)?19:currentRole==='rcm'?18:15}" style="text-align:center;padding:28px;color:var(--border)">No tickets match. <span style="cursor:pointer;text-decoration:underline;color:var(--spx)" onclick="tfClear()">Clear filters</span></td></tr>`}
   </table></div></div>`:''}`;
 }
 
@@ -8880,6 +8934,140 @@ function empStartApply(jobId){
   cur='im-jobs';  // stay on im-jobs page
   render();       // re-render im-jobs which will call pgIMJobs
 }
+
+function cfSaveWeek(tid,val){
+  const t=TICKETS.find(x=>x.id===tid);if(!t)return;
+  t.cfWeek=val.trim();
+}
+function cfSaveDate(tid,val){
+  const t=TICKETS.find(x=>x.id===tid);if(!t)return;
+  t.cfDate=val;
+}
+
+/* ── CF Approval Modal ── */
+function openCFModal(){
+  const existing=document.getElementById('cf-modal');if(existing)existing.remove();
+  cfBulkSelected=new Set();
+  const eligible=TICKETS.filter(t=>t.approvals.every(a=>a.status==='Approved'));
+  const hasWeek=eligible.filter(t=>t.cfWeek).length;
+  const hasDate=eligible.filter(t=>t.cfDate).length;
+  const el=document.createElement('div');
+  el.id='cf-modal';
+  el.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.45);z-index:999;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px;overflow-y:auto';
+  el.innerHTML=`<div style="background:#fff;border-radius:12px;width:900px;max-width:100%;box-shadow:0 16px 56px rgba(0,0,0,.22);overflow:hidden">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--navy)">CF Approval</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">${eligible.length} approved tickets · ${hasWeek} with CF week · ${hasDate} with CF date confirmed</div>
+      </div>
+      <button onclick="document.getElementById('cf-modal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--ink3);line-height:1;padding:2px 6px">×</button>
+    </div>
+
+    <!-- Bulk apply strip -->
+    <div style="padding:11px 20px;background:var(--navy-ll);border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <div>
+        <label style="font-size:9.5px;color:var(--ink3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:3px">CF Week (planned raise week)</label>
+        <input id="cf-bulk-week" placeholder="e.g. W22-2025" style="font-size:12px;font-family:monospace;width:130px;padding:5px 8px;border:1px solid var(--border);border-radius:6px"/>
+      </div>
+      <div>
+        <label style="font-size:9.5px;color:var(--ink3);font-weight:600;letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:3px">CF Approval Date (when approved)</label>
+        <input type="date" id="cf-bulk-date" style="font-size:12px;width:160px;padding:5px 8px;border:1px solid var(--border);border-radius:6px"/>
+      </div>
+      <button class="btn p" onclick="cfModalApplyBulk()">Apply to selected</button>
+      <button class="btn ghost" onclick="cfModalSelectAll(false)">Clear all</button>
+      <span id="cf-modal-sel-count" style="font-size:11px;color:var(--ink3);align-self:center">0 selected</span>
+    </div>
+
+    <!-- Table -->
+    <div style="overflow-x:auto;max-height:58vh;overflow-y:auto">
+    <table style="min-width:780px">
+      <tr style="background:var(--navy-ll);position:sticky;top:0;z-index:1">
+        <th style="width:36px;padding:7px 10px"><input type="checkbox" id="cf-modal-all" onchange="cfModalSelectAll(this.checked)"/></th>
+        <th>CTO ID</th><th>Role name</th><th>City</th><th>TL / RCM</th><th>Status</th><th>CF Week</th><th>CF Date</th>
+      </tr>
+      ${eligible.map(t=>`<tr id="cfm-row-${t.id}">
+        <td style="text-align:center;padding:6px 10px">
+          <input type="checkbox" id="cfm-chk-${t.id}" onchange="cfModalToggleRow('${t.id}',this.checked)"/>
+        </td>
+        <td><span style="font-family:monospace;font-size:11px;cursor:pointer;color:var(--spx)" onclick="document.getElementById('cf-modal').remove();viewTicket('${t.id}')">${t.id}</span></td>
+        <td style="font-weight:500;font-size:11.5px">${t.roleName}</td>
+        <td style="font-size:10.5px;color:var(--ink3)">${t.locCity}</td>
+        <td style="font-size:10.5px;color:var(--ink3)">${t.tl||'—'} / ${t.rcm||'—'}</td>
+        <td>${sbadge(t.status)}</td>
+        <td style="padding:5px 8px">
+          <input value="${t.cfWeek||''}" placeholder="W##-YYYY" id="cfm-week-${t.id}"
+            oninput="cfSaveWeek('${t.id}',this.value);cfModalRefreshRow('${t.id}')"
+            style="font-size:11px;font-family:monospace;width:100px;padding:4px 7px;
+            border:1px solid ${t.cfWeek?'var(--border)':'var(--err-b)'};border-radius:5px;
+            background:${t.cfWeek?'#fff':'var(--err-l)'}"/>
+        </td>
+        <td style="padding:5px 8px">
+          <input type="date" value="${t.cfDate||''}" id="cfm-date-${t.id}"
+            onchange="cfSaveDate('${t.id}',this.value);cfModalRefreshRow('${t.id}')"
+            style="font-size:11px;width:140px;padding:4px 7px;
+            border:1px solid ${t.cfDate?'var(--ok-b)':'var(--border)'};border-radius:5px;
+            background:${t.cfDate?'var(--ok-l)':'#fff'}"/>
+        </td>
+      </tr>`).join('')}
+    </table>
+    </div>
+
+    <div style="padding:11px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:10.5px;color:var(--ink3);max-width:600px">
+        <strong>CF Week</strong> — plan which batch this HC will be raised. Update if plans change. ·
+        <strong>CF Date</strong> — fill once CF approval is confirmed. Recruiters see this as the signal to proceed to offer.
+      </div>
+      <button class="btn p" onclick="cfModalDone()">Done</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click',e=>{if(e.target===el)el.remove();});
+}
+
+function cfModalToggleRow(tid,checked){
+  if(checked) cfBulkSelected.add(tid);
+  else cfBulkSelected.delete(tid);
+  const row=document.getElementById('cfm-row-'+tid);
+  if(row) row.style.background=checked?'var(--inf-l)':'';
+  const cnt=document.getElementById('cf-modal-sel-count');
+  if(cnt) cnt.textContent=cfBulkSelected.size+' selected';
+}
+function cfModalSelectAll(checked){
+  TICKETS.filter(t=>t.approvals.every(a=>a.status==='Approved')).forEach(t=>{
+    const chk=document.getElementById('cfm-chk-'+t.id);
+    if(chk) chk.checked=checked;
+    cfModalToggleRow(t.id,checked);
+  });
+  const allChk=document.getElementById('cf-modal-all');
+  if(allChk) allChk.checked=checked;
+}
+function cfModalRefreshRow(tid){
+  const t=TICKETS.find(x=>x.id===tid);if(!t)return;
+  const weekInp=document.getElementById('cfm-week-'+tid);
+  const dateInp=document.getElementById('cfm-date-'+tid);
+  if(weekInp){weekInp.style.borderColor=t.cfWeek?'var(--border)':'var(--err-b)';weekInp.style.background=t.cfWeek?'#fff':'var(--err-l)';}
+  if(dateInp){dateInp.style.borderColor=t.cfDate?'var(--ok-b)':'var(--border)';dateInp.style.background=t.cfDate?'var(--ok-l)':'#fff';}
+}
+function cfModalApplyBulk(){
+  const week=document.getElementById('cf-bulk-week')?.value?.trim()||'';
+  const date=document.getElementById('cf-bulk-date')?.value||'';
+  if(!week&&!date){alert('Enter at least one value to apply.');return;}
+  let count=0;
+  cfBulkSelected.forEach(tid=>{
+    const t=TICKETS.find(x=>x.id===tid);if(!t)return;
+    if(week){t.cfWeek=week;const inp=document.getElementById('cfm-week-'+tid);if(inp){inp.value=week;cfModalRefreshRow(tid);}}
+    if(date){t.cfDate=date;const inp=document.getElementById('cfm-date-'+tid);if(inp){inp.value=date;cfModalRefreshRow(tid);}}
+    count++;
+  });
+  const cnt=document.getElementById('cf-modal-sel-count');
+  if(cnt) cnt.textContent=count+' ticket(s) updated';
+}
+function cfModalDone(){
+  const modal=document.getElementById('cf-modal');if(modal)modal.remove();
+  cfBulkSelected=new Set();
+  render();
+}
+
 
 /* ═══════════════ INIT ═══════════════ */
 document.addEventListener('DOMContentLoaded',function(){
